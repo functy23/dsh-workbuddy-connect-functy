@@ -46,6 +46,7 @@ export const HOST_REASON_EN = {
   hostNoSignedInApp: 'No signed-in {app} account was found. Sign in once in the {app} desktop app, then try again.',
   hostSignInExpired: 'The sign-in expired and cannot be renewed. Sign in again in the {app} desktop app.',
   hostCredentialRegionMismatch: '{app} was pointed at a {other} credential. Point {env} at the {app} sign-in, or remove the mismatched file.',
+  hostCheckInFailed: 'The check-in request failed.',
 } as const
 
 /** The same refusals in Chinese; every key above, in the same order. */
@@ -78,6 +79,7 @@ export const HOST_REASON_ZH = {
   hostNoSignedInApp: '没有找到已登录的 {app} 账号。请先在 {app} 桌面 App 里登录一次。',
   hostSignInExpired: '登录已过期且无法续期。请在 {app} 桌面 App 里重新登录。',
   hostCredentialRegionMismatch: '{app} 拿到了一份 {other} 的凭据。请把 {env} 指向 {app} 的登录，或删掉那份不匹配的文件。',
+  hostCheckInFailed: '签到请求失败了。',
 } satisfies Record<keyof typeof HOST_REASON_EN, string>
 
 /**

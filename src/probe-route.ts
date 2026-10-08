@@ -123,6 +123,20 @@ export interface WorkBuddyProbeRouteOptions {
    */
   setModelVisibility?: (modelId: string, visible: boolean, expectedAccount: string) => Promise<{ state: string; reason?: string }>
   /**
+   * Claim this variant's daily benefit now, on the user's explicit request.
+   *
+   * The same action the timer performs, so a user who missed the moment (or who
+   * switched the schedule off and wants today's benefit anyway) gets the same
+   * result and the same log row as an automatic run.
+   */
+  checkIn?: () => Promise<{ state: string; reason?: string }>
+  /** Persist the automatic-check-in switch for this variant. */
+  setAutoCheckIn?: (enabled: boolean) => Promise<{ state: string; reason?: string }>
+  /** Persist when this variant checks in, as minutes past midnight UTC+8. */
+  setCheckInMinute?: (minuteOfDay: number) => Promise<{ state: string; reason?: string }>
+  /** Drop this variant's check-in history. */
+  clearCheckInLogs?: () => void
+  /**
    * Route path to mount. Defaults to the CN variant's path so existing callers
    * and tests keep their behaviour; the international variant passes its own.
    */
@@ -221,8 +235,7 @@ function parseAction(text: string): WorkBuddyProbeAction | undefined {
     if (typeof enabled !== 'boolean') return undefined
     return { action, enabled }
   }
-  if (action === 'set-model-allowlist') {
-    const account = wrapped['account']
+  if (action === 'set-model-allowlist') {    const account = wrapped['account']
     const allowlist = wrapped['allowlist']
     // Same account guard as the per-model write, and for the same reason: an
     // allowlist sent from a card showing account A must not land in B's bucket.
@@ -246,6 +259,26 @@ function parseAction(text: string): WorkBuddyProbeAction | undefined {
     const model = wrapped['model']
     if (typeof model !== 'string' || model.trim() === '') return undefined
     return { action: 'probe', model: model.trim() }
+  }
+  // The check-in actions. `check-in` and `clear-check-in-logs` carry no payload
+  // (the variant is the route's, and the log is per variant); the two settings
+  // writes carry the desired value so a retry is idempotent.
+  if (action === 'check-in' || action === 'clear-check-in-logs') return { action }
+  if (action === 'set-auto-check-in') {
+    const autoCheckIn = wrapped['autoCheckIn']
+    // A strict boolean, like the display switches above: the string "false" is
+    // truthy, and coercing it would leave automatic check-in ON for a request
+    // that plainly meant to switch it off.
+    if (typeof autoCheckIn !== 'boolean') return undefined
+    return { action: 'set-auto-check-in', autoCheckIn }
+  }
+  if (action === 'set-check-in-minute') {
+    const minuteOfDay = wrapped['minuteOfDay']
+    // Shape only (a real number): the host clamps the value onto a real minute
+    // of the day, so a stale card cannot schedule a run for a minute that does
+    // not exist, and the clamp has one implementation rather than two.
+    if (typeof minuteOfDay !== 'number' || !Number.isFinite(minuteOfDay)) return undefined
+    return { action: 'set-check-in-minute', minuteOfDay }
   }
   return undefined
 }
@@ -338,6 +371,42 @@ export function workBuddyProbeHandler(
           return
         }
         json(res, 200, await deps.setProbeControlVisible(action.enabled === true))
+        return
+      }
+      // The check-in group. Each is refused with its own 404 when the host was
+      // assembled without it (tests, a headless profile), which is how the card
+      // learns not to offer the control rather than being told a lie.
+      if (action.action === 'check-in') {
+        if (deps.checkIn === undefined) {
+          json(res, 404, { error: 'check-in-not-supported' })
+          return
+        }
+        json(res, 200, await deps.checkIn())
+        return
+      }
+      if (action.action === 'set-auto-check-in') {
+        if (deps.setAutoCheckIn === undefined) {
+          json(res, 404, { error: 'check-in-setting-not-supported' })
+          return
+        }
+        json(res, 200, await deps.setAutoCheckIn(action.autoCheckIn === true))
+        return
+      }
+      if (action.action === 'set-check-in-minute') {
+        if (deps.setCheckInMinute === undefined) {
+          json(res, 404, { error: 'check-in-setting-not-supported' })
+          return
+        }
+        json(res, 200, await deps.setCheckInMinute(action.minuteOfDay as number))
+        return
+      }
+      if (action.action === 'clear-check-in-logs') {
+        if (deps.clearCheckInLogs === undefined) {
+          json(res, 404, { error: 'check-in-not-supported' })
+          return
+        }
+        deps.clearCheckInLogs()
+        json(res, 200, { state: 'cleared' })
         return
       }
       if (action.action === 'set-model-visibility') {

@@ -42,10 +42,12 @@ import { createProbeKey, keyMatches, registerWorkBuddyProbeRoute } from './probe
 import { openWorkBuddyLink } from './open-link.ts'
 import type { WorkBuddyModelInfo } from './catalog.ts'
 import { isWorkBuddySidebarCreditStyle, WORKBUDDY_PROFILE_ENTRY_ID } from './status-paths.ts'
-import type { WorkBuddySidebarCreditStyle, WorkBuddyWebCatalog, WorkBuddyWebProbeSection } from './status-paths.ts'
+import type { WorkBuddySidebarCreditStyle, WorkBuddyWebCatalog, WorkBuddyWebCheckInSection, WorkBuddyWebProbeSection } from './status-paths.ts'
 import { WORKBUDDY_PREFERENCES, statedPreferences } from './preferences.ts'
 import type { WorkBuddyPreferenceConfig } from './preferences.ts'
 import { clearHostHeartbeat, writeHostHeartbeat } from './host-heartbeat.ts'
+import { WorkBuddyCheckIn, normalizeCheckInMinute, utc8DateString } from './checkin.ts'
+import { WorkBuddyCheckInScheduler, WorkBuddyCheckInStore } from './checkin-scheduler.ts'
 import { WORKBUDDY_CONNECT_VERSION } from './version.ts'
 import { CN_VARIANT, WORKBUDDY_VARIANTS, type WorkBuddyVariant } from './variants.ts'
 import type { WorkBuddyAccountAction, WorkBuddyAccountResult } from './status-paths.ts'
@@ -202,6 +204,23 @@ export {
   workbuddyHostHeartbeatPath,
   type WorkBuddyHostHeartbeat,
 } from './host-heartbeat.ts'
+export {
+  DEFAULT_CHECK_IN_MINUTE,
+  isPastCheckInTime,
+  msUntilCheckIn,
+  normalizeCheckInMinute,
+  utc8DateString,
+  WorkBuddyCheckIn,
+  type WorkBuddyCheckInResult,
+} from './checkin.ts'
+export {
+  WORKBUDDY_CHECKIN_FILENAME,
+  WorkBuddyCheckInScheduler,
+  WorkBuddyCheckInStore,
+  workbuddyCheckInPath,
+  type WorkBuddyCheckInLogRow,
+  type WorkBuddyCheckInState,
+} from './checkin-scheduler.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'llm-workbuddy'
@@ -309,6 +328,27 @@ interface WorkBuddyConfiguredFields {
   probeConsent?: boolean
   /** Use the largest context window the international catalog explicitly offers. */
   useMaximumContextWindow?: boolean
+  /**
+   * Whether the CN product's daily benefit is claimed automatically.
+   *
+   * Off by default, like every other thing this plugin does on the user's
+   * behalf without being asked: the request spends a real (if free) upstream
+   * call against their account, and a plugin that starts talking to a benefit
+   * endpoint the moment it is installed is a surprise. The card's check-in
+   * section is where it gets switched on.
+   */
+  autoCheckIn?: boolean
+  /** The same switch for the international product. */
+  autoCheckInAI?: boolean
+  /**
+   * When to claim, as minutes past midnight UTC+8 (600 = 10:00).
+   *
+   * UTC+8 for both products because the daily reset is the upstream's, not the
+   * machine's — see {@link normalizeCheckInMinute}.
+   */
+  checkInMinute?: number
+  /** The same moment for the international product. */
+  checkInMinuteAI?: number
 }
 
 /** Plugin configuration. */
@@ -323,6 +363,19 @@ const PROBE_CONSENT_FIELD = z.boolean().default(false)
   .description('Authorize reasoning-effort probes (each probe sends real requests that may consume credit)')
 const MAXIMUM_CONTEXT_WINDOW_FIELD = z.boolean().default(true)
   .description('Use the largest context window declared by WorkBuddy AI when alternatives are available (on by default)')
+/** Automatic daily check-in, one switch per product (both off by default). */
+const AUTO_CHECK_IN_FIELD = z.boolean().default(false)
+  .description('Claim this product\'s daily benefit automatically (sends one request a day to the billing endpoint)')
+/**
+ * The moment to claim, as minutes past midnight UTC+8.
+ *
+ * Bounded rather than clamped at the schema: this value reaches the store and
+ * the scheduler, and a form that silently rewrites 5000 to 600 hides the typo
+ * from whoever typed it. `normalizeCheckInMinute` still clamps what a
+ * hand-edited file can hold, because that path has no form to complain in.
+ */
+const CHECK_IN_MINUTE_FIELD = z.number().default(600)
+  .description('When to claim it, as minutes past midnight UTC+8 (600 = 10:00)')
 /**
  * The preference fields, taken from the one table that declares them.
  *
@@ -351,6 +404,10 @@ const CONFIG_FIELDS = {
   authFileAI: AUTH_FILE_AI_FIELD,
   probeConsent: PROBE_CONSENT_FIELD,
   useMaximumContextWindow: MAXIMUM_CONTEXT_WINDOW_FIELD,
+  autoCheckIn: AUTO_CHECK_IN_FIELD,
+  autoCheckInAI: AUTO_CHECK_IN_FIELD,
+  checkInMinute: CHECK_IN_MINUTE_FIELD,
+  checkInMinuteAI: CHECK_IN_MINUTE_FIELD,
   ...PREFERENCE_FIELDS,
 } as const
 
@@ -704,6 +761,36 @@ function probeSection(runtime: VariantRuntime, consent: boolean): WorkBuddyWebPr
 }
 
 /**
+ * The check-in section for one card: its switches, and what has happened.
+ *
+ * The switches are read from the live config on every call rather than captured
+ * at registration, so a write through the settings page reaches the very next
+ * status read — the same rule every other preference here follows.
+ *
+ * @param nextRunAt - the scheduler's answer for this variant, when one is armed.
+ */
+function checkInSection(
+  runtime: VariantRuntime,
+  config: Config,
+  store: WorkBuddyCheckInStore,
+  nextRunAt: number | undefined,
+): WorkBuddyWebCheckInSection {
+  const cn = runtime.variant.id === CN_VARIANT.id
+  const auto = (cn ? config.autoCheckIn : config.autoCheckInAI) === true
+  const minuteOfDay = normalizeCheckInMinute(cn ? config.checkInMinute : config.checkInMinuteAI)
+  const state = store.read(runtime.variant.id)
+  return {
+    auto,
+    minuteOfDay,
+    // Only when a run is actually armed: with the switch off nothing is
+    // scheduled, and a timestamp would promise a run that will not happen.
+    ...(!auto || nextRunAt === undefined) ? {} : { nextRunAt },
+    ...state?.lastDate === undefined || state.lastDate === '' ? {} : { lastDate: state.lastDate },
+    ...state === undefined || state.logs.length === 0 ? {} : { logs: state.logs },
+  }
+}
+
+/**
  * Adapt the account pool to the credential-store surface the probe service and
  * the adapter's auth plane expect.
  *
@@ -913,6 +1000,44 @@ export function apply(ctx: Context, config: Config): void {
    */
   const lastAccounts = new Map<string, string>()
 
+  /**
+   * The daily check-in: one service, one log, one scheduler for both products.
+   *
+   * One scheduler rather than one per variant because the two products' moments
+   * are independent but their *driver* is not: a single timer loop over both
+   * targets means changing one product's moment cannot disturb the other's
+   * pending run, and the log file stays one document with a section per
+   * product (see `checkin-scheduler.ts`).
+   */
+  const checkInStore = new WorkBuddyCheckInStore()
+  const checkInService = new WorkBuddyCheckIn()
+  /**
+   * One target per variant, assembled from the runtimes built below.
+   *
+   * Declared before the scheduler so the "switched on" and "when" answers are
+   * read from the LIVE config at each firing: a user who changes the moment (or
+   * flips the switch) gets that answer on the next sweep without re-registering
+   * anything, which is what `rearm()` is then called for.
+   */
+  const checkInScheduler = new WorkBuddyCheckInScheduler({
+    targets: WORKBUDDY_VARIANTS.map(variant => ({
+      variantId: variant.id,
+      enabled: () => (variant.id === CN_VARIANT.id ? current().autoCheckIn : current().autoCheckInAI) === true,
+      minuteOfDay: () => normalizeCheckInMinute(
+        variant.id === CN_VARIANT.id ? current().checkInMinute : current().checkInMinuteAI,
+      ),
+      // The pool's primary credential, the same one the catalog and credit
+      // reads use: a check-in must be claimed by the account the card is
+      // describing, or the log would credit a product for another account's
+      // benefit.
+      checkIn: async session =>
+        await checkInService.checkIn(variant.id, await runtimes
+          .find(runtime => runtime.variant.id === variant.id)
+          ?.accounts.primaryCredential()),
+    })),
+    store: checkInStore,
+  })
+
   // One at-rest key provider per variant, built by the shared helper the CLI
   // entry uses too. Product identity (env var, bundle id, registry name, exe
   // basename) lives on the variant's electron profile, so each provider can
@@ -960,6 +1085,15 @@ export function apply(ctx: Context, config: Config): void {
   let setComposerCreditVisible: ((visible: boolean) => Promise<{ state: string; reason?: string }>) | undefined
   /** Writes whether the composer keeps its reasoning-detection control. */
   let setProbeControlVisible: ((visible: boolean) => Promise<{ state: string; reason?: string }>) | undefined
+  /**
+   * Writes one product's automatic-check-in switch, and when it claims.
+   *
+   * Undefined on a host with no settings service, exactly like the display
+   * switches beside them: the status document then carries no switch, and the
+   * card renders no check-in controls rather than ones that could not be saved.
+   */
+  let setAutoCheckIn: ((variantId: string, enabled: boolean) => Promise<{ state: string; reason?: string }>) | undefined
+  let setCheckInMinute: ((variantId: string, minuteOfDay: number) => Promise<{ state: string; reason?: string }>) | undefined
   /**
    * Whether the host mounted a settings service this plugin can write through.
    * Decided once, inside the `settings` inject. The maximum-context getter
@@ -1057,6 +1191,10 @@ export function apply(ctx: Context, config: Config): void {
         resolveContextWindow: (modelId, declared) => runtime.contextPreference.resolve(modelId, declared),
         catalog: () => catalogSection(runtime),
         probe: () => probeSection(runtime, current().probeConsent === true),
+        // Check-in state for this product's own section: its switches, its
+        // moment, and its log. Read through `current()` so a settings write is
+        // visible to the very next status read.
+        checkIn: () => checkInSection(runtime, current(), checkInStore, checkInScheduler.nextRunAt(runtime.variant.id)),
         // Every display preference rides the status document, projected from the
         // live config, so the sidebar knows how to draw itself before anything
         // else on the page can tell it what the settings say — and so the very
@@ -1251,6 +1389,46 @@ export function apply(ctx: Context, config: Config): void {
         // Any variant's key opens the link: the action is not variant-scoped,
         // and the page may be rendering product A while B is the one signed in.
         // Compared the same constant-time way the handler compares a bare key.
+        // The check-in group, one route per variant like the rest of the card:
+        // the variant is the route's, so the browser cannot ask this route to
+        // claim for the other product.
+        checkIn: async () => {
+          // Not gated on the automatic switch: pressing this button IS the
+          // consent, and a user who wants today's benefit without a daily
+          // schedule must be able to get it. The switch only authorizes the
+          // requests nobody asked for.
+          const credential = await runtime.accounts.primaryCredential()
+          const session = utc8DateString(Date.now())
+          const result = await checkInService.checkIn(runtime.variant.id, credential)
+          checkInStore.write(runtime.variant.id, result, session)
+          // A claim changes the balance, and the card is about to re-read it.
+          if (result.status === 'claimed') ctx.emit('llm/adapters-updated')
+          return result.status === 'error'
+            ? { state: 'failed', reason: result.message ?? 'check-in failed' }
+            // A settled day is reported with whatever the upstream said — a
+            // claim, an already-claimed refusal, or no campaign — and the card's
+            // log is the real record either way. Omitted rather than written as
+            // `undefined`, which the wire type does not carry.
+            : { state: 'ok', ...result.message === undefined ? {} : { reason: result.message } }
+        },
+        setAutoCheckIn: async enabled => {
+          if (setAutoCheckIn === undefined) return { state: 'failed', reason: 'settings are unavailable' }
+          const result = await setAutoCheckIn(runtime.variant.id, enabled)
+          // The card draws the section from a status read, so the change has to
+          // be visible to the next one without waiting for a sweep.
+          if (result.state === 'updated') ctx.emit('llm/adapters-updated')
+          return result
+        },
+        setCheckInMinute: async minuteOfDay => {
+          if (setCheckInMinute === undefined) return { state: 'failed', reason: 'settings are unavailable' }
+          const result = await setCheckInMinute(runtime.variant.id, minuteOfDay)
+          if (result.state === 'updated') ctx.emit('llm/adapters-updated')
+          return result
+        },
+        clearCheckInLogs: () => {
+          checkInStore.clearLogs(runtime.variant.id)
+          ctx.emit('llm/adapters-updated')
+        },
       }, (presented: string | undefined) => keyMatches(probeKey, presented))
     }
   })
@@ -1302,6 +1480,11 @@ export function apply(ctx: Context, config: Config): void {
       for (const runtime of runtimes) {
         runtime.store.setDesktopPath(configuredAuthFile(next, runtime.variant))
       }
+      // The check-in moment is read from the live config at each firing, so a
+      // changed moment only needs the ARMED timer rebuilt — otherwise the old
+      // moment would still fire first and the user's change would look ignored
+      // until the following day.
+      checkInScheduler.rearm()
     })
 
     // A form write is addressed by the PROFILE ENTRY id \u2014 the Loader row's own
@@ -1387,6 +1570,33 @@ export function apply(ctx: Context, config: Config): void {
       }
       return { state: 'updated' }
     }
+    // The check-in switches, one field per product. Written through the same
+    // settings service and then re-armed explicitly, because the timer that was
+    // armed for the old moment would otherwise still fire first.
+    setAutoCheckIn = async (variantId, enabled) => {
+      if (forms.update === undefined) {
+        return { state: 'failed', reason: 'this host does not accept settings writes' }
+      }
+      const field = variantId === CN_VARIANT.id ? 'autoCheckIn' : 'autoCheckInAI'
+      try {
+        await forms.update(entryId() ?? PROFILE_ENTRY_ID, { [field]: enabled })
+      } catch (error: unknown) {
+        return { state: 'failed', reason: error instanceof Error ? error.message.slice(0, 300) : String(error) }
+      }
+      return { state: 'updated' }
+    }
+    setCheckInMinute = async (variantId, minuteOfDay) => {
+      if (forms.update === undefined) {
+        return { state: 'failed', reason: 'this host does not accept settings writes' }
+      }
+      const field = variantId === CN_VARIANT.id ? 'checkInMinute' : 'checkInMinuteAI'
+      try {
+        await forms.update(entryId() ?? PROFILE_ENTRY_ID, { [field]: normalizeCheckInMinute(minuteOfDay) })
+      } catch (error: unknown) {
+        return { state: 'failed', reason: error instanceof Error ? error.message.slice(0, 300) : String(error) }
+      }
+      return { state: 'updated' }
+    }
   })
 
   /**
@@ -1406,8 +1616,15 @@ export function apply(ctx: Context, config: Config): void {
     stopped = true
     for (const timer of timers) clearInterval(timer)
     timers.length = 0
+    checkInScheduler.dispose()
     void clearHostHeartbeat()
   })
+
+  // Started after the routes are mounted, so a check-in that lands immediately
+  // (a catch-up sweep) finds the card's own read already answering. The sweep
+  // only runs a variant whose moment has passed and whose day is unsettled, so
+  // a host started before the configured moment does nothing here.
+  checkInScheduler.start()
 
   /**
    * Execute one account-pool action from the card.

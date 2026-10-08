@@ -80,6 +80,7 @@ import {
 import type { WorkBuddyCardVariant } from './card-variants.ts'
 import type { WorkBuddySettingsKey } from './locales.ts'
 import { translateHostReason } from './host-reason.ts'
+import type { WorkBuddyProbeAction, WorkBuddyWebCheckInLog, WorkBuddyWebCheckInSection } from '../status-paths.ts'
 
 /** Copy function injected by the client registration. */
 type Translate = (key: WorkBuddySettingsKey, params?: Record<string, unknown>) => string
@@ -1413,13 +1414,173 @@ export interface WorkBuddySettingsPageProps {
 }
 
 /**
+ * The daily check-in section: one block per product, with its switch, its
+ * moment, its "check in now" action, and its log.
+ *
+ * Its own component rather than rows inline because the two products' blocks
+ * are the same shape with different data, and the section is the only place on
+ * this page that draws a LIST (the log) rather than a control — folding it into
+ * the page body would put four maps and a table inside an already-long render.
+ *
+ * A product with no `checkIn` section in its document is skipped entirely: that
+ * is a host assembled without the feature (or one that cannot persist the
+ * switch), and a control that could not be saved is worse than no control.
+ */
+function CheckInSection({ t, statuses, busy, onAct }: {
+  t: Translate
+  statuses: Partial<Record<string, WorkBuddyWebStatus>>
+  busy: boolean
+  onAct: (variant: WorkBuddyCardVariant, body: WorkBuddyProbeAction) => void
+}): React.ReactNode {
+  const withCheckIn = CARD_VARIANTS.filter(variant => {
+    const status = statuses[variant.id]
+    return status !== undefined && status.status === 'signed-in' && status.checkIn !== undefined
+  })
+  if (withCheckIn.length === 0) return null
+
+  /** One attempt's status as words; the amount is left to the caller. */
+  const statusText = (row: WorkBuddyWebCheckInLog): string => {
+    if (row.status === 'claimed') {
+      return row.amount === undefined
+        ? t('checkInStatusClaimedNoAmount')
+        : t('checkInStatusClaimed', { amount: String(row.amount) })
+    }
+    if (row.status === 'already-claimed') return t('checkInStatusAlready')
+    if (row.status === 'no-campaign') return t('checkInStatusNoCampaign')
+    return t('checkInStatusError')
+  }
+
+  return (
+    <SettingsGroup title={t('checkInHeading')}>
+      {withCheckIn.map(variant => {
+        const status = statuses[variant.id]
+        const checkIn: WorkBuddyWebCheckInSection | undefined =
+          status !== undefined && status.status === 'signed-in' ? status.checkIn : undefined
+        if (checkIn === undefined) return null
+        const logs = checkIn.logs ?? []
+        return (
+          <div key={variant.id} className="wbp-checkIn">
+            <SettingRow
+              title={t('checkInLabel', { product: variant.appName })}
+              titleFor={`wbp-checkin-auto-${variant.id}`}
+              description={t('checkInHint')}
+              control={
+                <ToggleField
+                  id={`wbp-checkin-auto-${variant.id}`}
+                  label={t('checkInLabel', { product: variant.appName })}
+                  checked={checkIn.auto}
+                  disabled={busy}
+                  onChange={enabled => {
+                    onAct(variant, { action: 'set-auto-check-in', autoCheckIn: enabled })
+                  }}
+                />
+              }
+            />
+            {/*
+              * The moment is only worth offering once the switch is on: an
+              * editable time for a schedule that will not run is a control that
+              * does nothing, which reads as a bug rather than as a setting.
+              */}
+            {!checkIn.auto ? null : (
+              <SettingRow
+                title={t('checkInMinuteLabel')}
+                titleFor={`wbp-checkin-minute-${variant.id}`}
+                description={t('checkInMinuteHint')}
+                control={
+                  <input
+                    id={`wbp-checkin-minute-${variant.id}`}
+                    className="wbp-input wbp-checkinTime"
+                    type="time"
+                    disabled={busy}
+                    value={minuteToTimeValue(checkIn.minuteOfDay)}
+                    onChange={event => {
+                      const minute = timeValueToMinute(event.target.value)
+                      if (minute !== undefined) onAct(variant, { action: 'set-check-in-minute', minuteOfDay: minute })
+                    }}
+                  />
+                }
+              />
+            )}
+            <SettingRow
+              title={
+                checkIn.auto && checkIn.nextRunAt !== undefined
+                  ? t('checkInNext', { time: formatClock(checkIn.nextRunAt) })
+                  : t('checkInNextNone')
+              }
+              description={checkIn.lastDate === undefined
+                ? t('checkInNever')
+                : t('checkInLastSettled', { date: checkIn.lastDate })}
+              control={
+                <span className="wbp-checkInActions">
+                  <ActionButton
+                    label={t('checkInNow')}
+                    disabled={busy}
+                    onClick={() => { onAct(variant, { action: 'check-in' }) }}
+                  />
+                  {logs.length === 0 ? null : (
+                    <ActionButton
+                      label={t('checkInClearLogs')}
+                      disabled={busy}
+                      onClick={() => { onAct(variant, { action: 'clear-check-in-logs' }) }}
+                    />
+                  )}
+                </span>
+              }
+            />
+            {logs.length === 0 ? null : (
+              <div className="wbp-checkInLog">
+                <p className="wbp-hint">{t('checkInLogsHeading')}</p>
+                {logs.map(row => (
+                  <div key={row.id} className="wbp-checkInLogRow">
+                    <span className="wbp-checkInLogWhen">{formatClock(row.timestamp)}</span>
+                    <span className="wbp-checkInLogWhat">{statusText(row)}</span>
+                    {row.message === undefined ? null : (
+                      <span className="wbp-checkInLogWhy">{row.message}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </SettingsGroup>
+  )
+}
+
+/** A minute-of-day as an `<input type="time">` value (`HH:MM`). */
+function minuteToTimeValue(minuteOfDay: number): string {
+  const minute = Math.max(0, Math.min(1439, Math.trunc(minuteOfDay)))
+  return `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`
+}
+
+/** The minute-of-day a `HH:MM` field holds, or undefined when it is incomplete. */
+function timeValueToMinute(value: string): number | undefined {
+  const match = /^(\d{1,2}):(\d{2})$/u.exec(value.trim())
+  if (match === null) return undefined
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours > 23 || minutes > 59) return undefined
+  return hours * 60 + minutes
+}
+
+/** An epoch rendered as a local wall-clock time, for a log row or a next run. */
+function formatClock(atMs: number): string {
+  return new Date(atMs).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
  * The page itself: one card, two product blocks.
  *
  * Each product is driven by its own status document, so a failure or a slow
  * answer on one never blocks or blanks the other.
  */
 export function WorkBuddySettingsPage({ t, context, refreshPanel }: WorkBuddySettingsPageProps): React.ReactNode {
-  // Seeded from the cache so the first paint already carries the accounts and
   // balances the last visit saw, instead of an empty page while the live read is
   // in flight. Read once, in the initializer: a later render must not resurrect a
   // document the user has since replaced.
@@ -2009,10 +2170,51 @@ export function WorkBuddySettingsPage({ t, context, refreshPanel }: WorkBuddySet
       .finally(() => { if (mounted.current) setBusy(false) })
   }, [blockedReason, keyFor, readAll, refreshPanel, t])
 
-  /** Store the sidebar's credit-line style. */
+  /**
+   * Store the sidebar's credit-line style. */
   const setCreditStyle = useCallback((style: WorkBuddySidebarCreditStyle): void => {
     writeSidebarPreference({ action: 'set-sidebar-credit-style', creditStyle: style })
   }, [writeSidebarPreference])
+
+  /**
+   * One check-in action against one product's probe route.
+   *
+   * Reads its answer the way the other writes on this page do: a non-2xx is the
+   * host saying the action is absent (404), and a 200 whose `state` is not a
+   * success carries the host's own reason. That is what makes the section report
+   * a refusal instead of appearing to have done nothing.
+   */
+  const checkInAction = useCallback((variant: WorkBuddyCardVariant, body: WorkBuddyProbeAction): void => {
+    const key = keyFor(variant)
+    if (key === undefined) {
+      setError(blockedReason(variant) ?? t('requestFailed'))
+      return
+    }
+    setBusy(true)
+    setError(undefined)
+    setNotice(undefined)
+    void fetch(variant.probePath, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-WorkBuddy-Probe-Key': key },
+      credentials: 'same-origin',
+      body: JSON.stringify(body),
+    })
+      .then(async response => {
+        const value: unknown = await response.json().catch(() => undefined)
+        if (!response.ok) {
+          setError(`HTTP ${String(response.status)}`)
+        } else if (typeof value === 'object' && value !== null && 'state' in value
+          && value.state !== 'updated' && value.state !== 'ok' && value.state !== 'cleared') {
+          setError(String((value as Record<string, unknown>)['reason'] ?? t('requestFailed')))
+        }
+        await readAll()
+        // The sidebar card reads the same documents, so it is told now rather
+        // than at its next minute tick.
+        refreshPanel?.()
+      })
+      .catch((cause: unknown) => { setError(cause instanceof Error ? cause.message : t('requestFailed')) })
+      .finally(() => { if (mounted.current) setBusy(false) })
+  }, [blockedReason, keyFor, readAll, refreshPanel, t])
 
   /**
    * Show or hide the sidebar's credit card.
@@ -2340,6 +2542,7 @@ export function WorkBuddySettingsPage({ t, context, refreshPanel }: WorkBuddySet
           )}
         </SettingsGroup>
       )}
+      <CheckInSection t={t} statuses={statuses} busy={busy} onAct={checkInAction} />
 
       {/*
         * The staged-edit bar — a straight port of the reference implementation's

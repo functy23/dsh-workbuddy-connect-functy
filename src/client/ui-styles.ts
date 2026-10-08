@@ -303,6 +303,17 @@ export const PAGE_CSS = `
 .wbp-linkFallback{display:flex;flex-direction:column;gap:8px}
 .wbp-linkFallback .wbp-input{font-size:12px}
 .wbp-tokenArea:focus-visible{border-color:var(--dsw-alias-brand-primary);outline:none}
+/* The check-in log: a list of attempts under the section's rows. Its own block
+ * rather than more rows, so the controls above stay a column of settings and
+ * the history reads as a record. */
+.wbp-checkIn{display:flex;flex-direction:column}
+.wbp-checkInActions{display:flex;gap:8px;align-items:center}
+.wbp-checkInTime{width:120px}
+.wbp-checkInLog{display:flex;flex-direction:column;gap:4px;padding:8px 0 12px}
+.wbp-checkInLogRow{display:flex;gap:10px;align-items:baseline;font-size:12px;line-height:18px}
+.wbp-checkInLogWhen{flex:0 0 auto;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}
+.wbp-checkInLogWhat{flex:0 0 auto;color:var(--dsw-alias-label-primary)}
+.wbp-checkInLogWhy{min-width:0;color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.wbp-chevron,.wbp-toggle::after,.wbp-segmentIndicator,.wbp-segment{transition:none}}
 `
 

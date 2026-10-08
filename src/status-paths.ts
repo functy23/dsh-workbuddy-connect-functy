@@ -119,7 +119,7 @@ export interface WorkBuddyProbeAction {
    * Every one of them is a write, which is why they share this route's
    * in-process key and loopback guards rather than the read-only status GET.
    */
-  action: 'probe' | 'clear' | 'refresh' | 'set-maximum-context-window' | 'set-model-visibility' | 'set-model-allowlist' | 'open-link' | 'set-sidebar-credit-style' | 'set-sidebar-credit-visible' | 'set-composer-credit-visible' | 'set-probe-control-visible'
+  action: 'probe' | 'clear' | 'refresh' | 'set-maximum-context-window' | 'set-model-visibility' | 'set-model-allowlist' | 'open-link' | 'set-sidebar-credit-style' | 'set-sidebar-credit-visible' | 'set-composer-credit-visible' | 'set-probe-control-visible' | 'check-in' | 'set-auto-check-in' | 'set-check-in-minute' | 'clear-check-in-logs'
   /** Target model id; required for `probe` and `set-model-visibility`. */
   model?: string
   /**
@@ -169,6 +169,22 @@ export interface WorkBuddyProbeAction {
    * account's toggle in another account's bucket.
    */
   account?: string
+  /**
+   * Requested on/off value for `set-auto-check-in`.
+   *
+   * Reuses the same field as the display switches above for the same reason:
+   * the wire carries the desired state itself, so a retried request is
+   * idempotent and a lost one cannot leave the setting half-toggled.
+   */
+  autoCheckIn?: boolean
+  /**
+   * Requested moment for `set-check-in-minute`, as minutes past midnight UTC+8.
+   *
+   * Sending the whole value rather than a delta keeps the write idempotent. The
+   * host clamps it, so a malformed value from a stale card cannot schedule a
+   * run for a minute that does not exist.
+   */
+  minuteOfDay?: number
 }
 
 /**
@@ -195,6 +211,48 @@ export interface WorkBuddyWebVisibilitySection {
    * disk: see {@link WorkBuddyProbeAction}.
    */
   allowlist?: readonly string[]
+}
+
+/**
+ * Daily benefit check-in, as the card renders it.
+ *
+ * The settings travel WITH the record rather than over a separate read: the
+ * card draws one section — a switch, a moment, and the log of what happened —
+ * and splitting them would let the section render a switch whose value it did
+ * not have, or a log for a product it was not told about.
+ *
+ * `auto` reflects the host's config, so a card can never claim a switch is on
+ * when the host would not actually run. The log is absent rather than empty for
+ * a product that has never checked in, which is a different statement from
+ * "checked in and never succeeded".
+ */
+export interface WorkBuddyWebCheckInSection {
+  /** Whether the host will claim automatically for this product. */
+  auto: boolean
+  /** When it would claim, as minutes past midnight UTC+8. */
+  minuteOfDay: number
+  /**
+   * When the next run is due, epoch ms, when the host has one armed.
+   *
+   * Omitted when automatic check-in is off: nothing is armed then, and a
+   * timestamp would promise a run that will not happen.
+   */
+  nextRunAt?: number
+  /** The last settled day, `YYYY-MM-DD`, when anything has settled. */
+  lastDate?: string
+  /** Most recent attempts, newest first. */
+  logs?: readonly WorkBuddyWebCheckInLog[]
+}
+
+/** One logged check-in attempt. */
+export interface WorkBuddyWebCheckInLog {
+  id: string
+  date: string
+  timestamp: number
+  status: 'claimed' | 'already-claimed' | 'no-campaign' | 'error'
+  /** Credits granted, when the answer stated a figure. */
+  amount?: number
+  message?: string
 }
 
 /**
@@ -593,6 +651,15 @@ export type WorkBuddyWebStatus =
     useMaximumContextWindow?: boolean
     /** Per-account hidden-model state for the card's visibility controls. */
     visibility?: WorkBuddyWebVisibilitySection
+    /**
+     * Daily benefit check-in: how it is configured, and what it has done.
+     *
+     * Part of the signed-in document because that is the only state the switches
+     * are reachable from where they mean anything — the card's check-in section
+     * is a row of the same accounts-and-credit page, and a product with no
+     * account has no benefit to claim.
+     */
+    checkIn?: WorkBuddyWebCheckInSection
     /**
      * A diagnosable problem reading the desktop app's own credential, while the
      * pool still serves from its other members.

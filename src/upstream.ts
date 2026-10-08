@@ -453,7 +453,7 @@ export function originForRegion(region: WorkBuddyRegion): string {
   return region === 'global' ? GLOBAL_BASE : CN_BILLING_BASE
 }
 
-function billingBase(credential: WorkBuddyCredential): string {
+export function billingBase(credential: WorkBuddyCredential): string {
   return regionOf(credential.domain) === 'global' ? GLOBAL_BASE : CN_BILLING_BASE
 }
 
@@ -519,7 +519,7 @@ function refreshHeaders(credential: WorkBuddyCredential): Record<string, string>
 }
 
 /** Billing request headers. */
-function billingHeaders(credential: WorkBuddyCredential): Record<string, string> {
+export function billingHeaders(credential: WorkBuddyCredential): Record<string, string> {
   const headers: Record<string, string> = {
     'Authorization': `Bearer ${credential.accessToken}`,
     'Accept': 'application/json',

@@ -21,7 +21,7 @@ import { normalizeCredits } from './upstream.ts'
 import type { WorkBuddyModelInfo } from './catalog.ts'
 import { hostIsLoopback, originIsLoopback } from './loopback.ts'
 import { WORKBUDDY_STATUS_PATH } from './status-paths.ts'
-import type { WorkBuddyWebCatalog, WorkBuddyWebModelBadge, WorkBuddyWebProbeSection, WorkBuddyWebStatus, WorkBuddyWebVisibilitySection } from './status-paths.ts'
+import type { WorkBuddyWebCatalog, WorkBuddyWebCheckInSection, WorkBuddyWebModelBadge, WorkBuddyWebProbeSection, WorkBuddyWebStatus, WorkBuddyWebVisibilitySection } from './status-paths.ts'
 import type { WorkBuddyStatedPreferences } from './preferences.ts'
 
 export { WORKBUDDY_STATUS_PATH } from './status-paths.ts'
@@ -96,6 +96,14 @@ export interface WorkBuddyStatusRouteOptions {
    * no visibility controls rather than a list every such account would share.
    */
   visibility?: () => WorkBuddyWebVisibilitySection | undefined
+  /**
+   * Daily check-in state for the card's check-in section.
+   *
+   * Undefined when the caller offers none (tests, headless profiles); the field
+   * then stays out of the document and the card renders no section rather than
+   * a switch that could not be saved.
+   */
+  checkIn?: () => WorkBuddyWebCheckInSection | undefined
   /**
    * Route path to mount. Defaults to the CN variant's path so existing callers
    * and tests keep their behaviour; the international variant passes its own.
@@ -271,14 +279,20 @@ export async function workBuddyWebStatus(
   // consent switches and results without a second request. The control key
   // travels with it: this response already passed the loopback guard, and the
   // key authorizes only probe control, never credentials or completions.
-  let probed: WorkBuddyWebStatus = statusWithModels
+  // Check-in state rides the document for the same reason the probe section
+  // does: it is one more thing the card draws without a second request. It
+  // needs a signed-in product, so it is added here rather than beside the
+  // visibility section — a product with no account has no benefit to claim.
+  const checkIn = deps.checkIn?.()
+  const withCheckIn: WorkBuddyWebStatus = checkIn === undefined ? statusWithModels : { ...statusWithModels, checkIn }
+  let probed: WorkBuddyWebStatus = withCheckIn
   if (deps.probe !== undefined) {
     // The preference is offered only when the getter can answer a value; a
     // host that cannot persist it answers `undefined` and the field stays out
     // of this document, which is the card's signal not to render the control.
     const maximumContextWindow = deps.useMaximumContextWindow?.()
     probed = {
-      ...statusWithModels,
+      ...withCheckIn,
       probe: deps.probe(),
       ...deps.probeKey === undefined ? {} : { probeKey: deps.probeKey },
       ...maximumContextWindow === undefined ? {} : { useMaximumContextWindow: maximumContextWindow },

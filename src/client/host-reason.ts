@@ -75,6 +75,9 @@ const EXACT_REASONS: readonly ExactReason[] = [
   { reason: 'the token names an issuer this plugin does not recognise', key: 'hostTokenIssuerUnknown' },
   // src/web-status.ts — the empty-pool hint the card shows as its reason line.
   { reason: 'no account yet: sign in to the desktop app, or add one by QR from this card', key: 'hostNoAccountYet' },
+  // src/index.ts — the manual check-in action's fallback, when the upstream
+  // gave no message of its own.
+  { reason: 'check-in failed', key: 'hostCheckInFailed' },
 ]
 
 /**
