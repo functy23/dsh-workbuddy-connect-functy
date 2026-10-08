@@ -1030,10 +1030,32 @@ export function apply(ctx: Context, config: Config): void {
       // reads use: a check-in must be claimed by the account the card is
       // describing, or the log would credit a product for another account's
       // benefit.
-      checkIn: async session =>
-        await checkInService.checkIn(variant.id, await runtimes
-          .find(runtime => runtime.variant.id === variant.id)
-          ?.accounts.primaryCredential()),
+      //
+      // `captureDesktop()` FIRST, and that is load-bearing rather than a
+      // flourish. The pool learns the desktop app's sign-in only from a capture,
+      // and the sweep that performs one runs on a 30-second timer started later
+      // in `apply()`. A check-in that fires before that first sweep — which is
+      // exactly what a catch-up on a freshly started host does, since the moment
+      // it is catching up is already in the past — would otherwise find an empty
+      // pool and record "no credential to check in with", losing the day's
+      // benefit until the next start. The card's manual refresh performs the
+      // same capture first, for the same reason.
+      checkIn: async session => {
+        const runtime = runtimes.find(candidate => candidate.variant.id === variant.id)
+        if (runtime === undefined) {
+          return {
+            variantId: variant.id,
+            date: utc8DateString(Date.now()),
+            timestamp: Date.now(),
+            status: 'error',
+            message: 'no credential to check in with',
+          }
+        }
+        // A capture that fails is not fatal: a pool that already holds an
+        // account still answers, and one that does not is reported below.
+        await runtime.accounts.captureDesktop().catch(() => undefined)
+        return await checkInService.checkIn(variant.id, await runtime.accounts.primaryCredential())
+      },
     })),
     store: checkInStore,
   })

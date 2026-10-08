@@ -29,6 +29,7 @@
     "tests/qr-code.spec.ts",
     "tests/credit-badge.spec.ts",
     "tests/settings-page.spec.ts",
+    "tests/checkin-section.spec.ts",
     "tests/client-open-external.spec.ts",
     "tests/open-link.spec.ts",
     "tests/model-select.spec.ts",

@@ -234,11 +234,17 @@ export class WorkBuddyCheckIn {
     const code = numberOf(data['code'])
     const message = messageOf(data)
 
+    // The settled states carry NO invented sentence when the upstream gave
+    // none. `status` already says what happened, and the card renders it from
+    // its own dictionary — so an English fallback here would be the one string
+    // on a Chinese page that nothing can translate, because it is indistinguishable
+    // from the upstream's own words. The message is for what only the upstream
+    // can say; absent means "nothing to add".
     if (isAlreadyClaimed(code, message)) {
-      return { ...base, status: 'already-claimed', message: message === '' ? 'already claimed today' : message }
+      return { ...base, status: 'already-claimed', ...message === '' ? {} : { message } }
     }
     if (isNoCampaign(data, message)) {
-      return { ...base, status: 'no-campaign', message: message === '' ? 'no check-in campaign is active' : message }
+      return { ...base, status: 'no-campaign', ...message === '' ? {} : { message } }
     }
 
     // A 2xx with no stated business code is how the upstream answers a
@@ -249,10 +255,13 @@ export class WorkBuddyCheckIn {
         ...base,
         status: 'claimed',
         ...amount === undefined ? {} : { amount },
-        message: message === '' ? 'checked in' : message,
+        ...message === '' ? {} : { message },
       }
     }
 
+    // A failure has nothing else to say what went wrong, so a bare diagnostic
+    // is the detail — and it is a fact (a status, a transport error), not prose
+    // this plugin composed.
     return {
       ...base,
       status: 'error',

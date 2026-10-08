@@ -1,6 +1,6 @@
 # 与上游同步
 
-本仓库是 `functy23/dsh-workbuddy-connect-functy` 的分支。上游仍在维护，这里的每次改动都要能跟上游的新提交合到一起，且**冲突面越小越好**。这份文档说明怎么同步，以及本仓库为此刻意遵守的约定。
+本仓库是 `adfnaa/dsh-workbuddy-connect-functy`，它从 `functy23/dsh-workbuddy-connect-functy` 分出来。上游仍在维护，这里的每次改动都要能跟上游的新提交合到一起，且**冲突面越小越好**。这份文档说明怎么同步，以及本仓库为此刻意遵守的约定。
 
 > 与 `corrinehu/dsh-workbuddy-connect` 无关。那是更早的原始作者，两条线已经不共享代码；不需要、也不应该为它做兼容。
 
@@ -13,7 +13,7 @@ git remote add upstream https://github.com/functy23/dsh-workbuddy-connect-functy
 git remote -v      # origin = 你的 fork，upstream = functy23
 ```
 
-两个 remote 都验证过：`origin` 是你的 `adfnaa/...`，`upstream` 是 `functy23/...`。`main` 跟踪 `origin/main`。
+两个 remote 都验证过：`origin` 是 `adfnaa/...`（你自己的仓库，也是 `package.json` 的 repository），`upstream` 是 `functy23/...`（分叉来源）。`main` 跟踪 `origin/main`。
 
 ## 同步上游
 

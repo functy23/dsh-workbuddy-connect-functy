@@ -6,19 +6,19 @@
 
 **corrinehu/dsh-workbuddy-connect 的 Functy 分支：仪表盘界面、多账号轮换与额度展示，把 WorkBuddy 桌面 App 的模型接到 DeepSeek Harness。**
 
-[![dsh-workbuddy-connect-functy](https://img.shields.io/badge/dsh--workbuddy--connect--functy-0.13.11-4F46E5)](https://github.com/functy23/dsh-workbuddy-connect-functy)
+[![dsh-workbuddy-connect-functy](https://img.shields.io/badge/dsh--workbuddy--connect--functy-0.14.0-4F46E5)](https://github.com/adfnaa/dsh-workbuddy-connect-functy)
 [![Language](https://img.shields.io/badge/language-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Top Language](https://img.shields.io/github/languages/top/functy23/dsh-workbuddy-connect-functy)](https://github.com/functy23/dsh-workbuddy-connect-functy)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/functy23/dsh-workbuddy-connect-functy)
+[![Top Language](https://img.shields.io/github/languages/top/adfnaa/dsh-workbuddy-connect-functy)](https://github.com/adfnaa/dsh-workbuddy-connect-functy)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/adfnaa/dsh-workbuddy-connect-functy)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-[![Downloads](https://img.shields.io/github/downloads/functy23/dsh-workbuddy-connect-functy/total)](https://github.com/functy23/dsh-workbuddy-connect-functy/releases)
-[![Stars](https://img.shields.io/github/stars/functy23/dsh-workbuddy-connect-functy)](https://github.com/functy23/dsh-workbuddy-connect-functy/stargazers)
-[![Repo Size](https://img.shields.io/github/repo-size/functy23/dsh-workbuddy-connect-functy)](https://github.com/functy23/dsh-workbuddy-connect-functy)
-[![Contributors](https://img.shields.io/github/contributors/functy23/dsh-workbuddy-connect-functy)](https://github.com/functy23/dsh-workbuddy-connect-functy/graphs/contributors)
+[![Downloads](https://img.shields.io/github/downloads/adfnaa/dsh-workbuddy-connect-functy/total)](https://github.com/adfnaa/dsh-workbuddy-connect-functy/releases)
+[![Stars](https://img.shields.io/github/stars/adfnaa/dsh-workbuddy-connect-functy)](https://github.com/adfnaa/dsh-workbuddy-connect-functy/stargazers)
+[![Repo Size](https://img.shields.io/github/repo-size/adfnaa/dsh-workbuddy-connect-functy)](https://github.com/adfnaa/dsh-workbuddy-connect-functy)
+[![Contributors](https://img.shields.io/github/contributors/adfnaa/dsh-workbuddy-connect-functy)](https://github.com/adfnaa/dsh-workbuddy-connect-functy/graphs/contributors)
 
-[Issues](https://github.com/functy23/dsh-workbuddy-connect-functy/issues) • [Changelog](CHANGELOG.md) • [中文](README.md) / [English](README.en.md)
+[Issues](https://github.com/adfnaa/dsh-workbuddy-connect-functy/issues) • [Changelog](CHANGELOG.md) • [中文](README.md) / [English](README.en.md)
 
 </div>
 
@@ -32,14 +32,14 @@
 
 对照上游稳定版 **0.7.1**（2026-10-01）。两边都有的不写进「本仓库才有」。
 
-| | 上游 `dsh-workbuddy-connect` 0.7.1 | 本仓库 0.13.11 |
+| | 上游 `dsh-workbuddy-connect` 0.7.1 | 本仓库 0.14.0 |
 |---|---|---|
 | 界面 | 设置里两张旧插件卡片 | 侧栏额度卡 + 中栏仪表盘 + 设置分区页 |
 | 账号 | 跟桌面 App 当前这一份登录 | 多账号池：轮换、扫码、令牌、桌面凭证；删除后不会被 30 秒扫描加回来 |
 | 额度 | 只在设置卡片上 | 侧栏一眼可见，可切「剩余 / 用量」样式，可关掉 |
 | DSH | **只** `0.2.0-rc.2` | `0.1.7-alpha.1` / `0.2.0-rc.1` / `0.2.0-rc.2` |
 | 更新提醒 | 右下角更新条 | 无（未移植） |
-| npm | `dsh-workbuddy-connect` | `dsh-workbuddy-connect-functy` |
+| npm | `dsh-workbuddy-connect` | `dsh-workbuddy-connect-functy`（本版未发；停在 `0.13.11`） |
 
 两边都有：国内/国际分组、图片输入、推理档位检测、模型显隐、国内企业额度、选择器里的倍率与促销徽章、Windows Electron 发现、按区域识别 effort 拒绝码。
 
@@ -70,14 +70,15 @@
 - **图片输入**：多数模型支持粘贴或拖入图片。
 - **推理档位**：上游声明了的直接显示。没声明的，Web / Desktop 可在选择器里点「推理等级」手动检测（会发少量请求，可能扣积分）。
 - **模型显隐**：按登录账号分别保存。隐藏只影响选择器，已有会话不受影响。
+- **每日自动签到**：设置 → WorkBuddy → **每日签到**，国内版与国际版各一个开关（默认**关**）。打开后可设签到时刻（北京时间 UTC+8，默认 10:00），到点自动领取当日福利；设置页常驻一份**签到流水**（每次成功/已签到/无活动/失败各一行，保留最近 30 条），并可「立即签到」或「清空日志」。**开机补签**：宿主启动时若当天的签到时刻已过且尚未结算，会立刻补签一次 —— 关机一整天后开机也能领到；启动时若还没到点则照常等待。签到与自动签到开关都走插件自己的路由（带进程内控制密钥），请求复用计费接口的域名与请求头。
 
 ## 安装
 
 前置：已安装并登录 WorkBuddy 桌面 App（国际版同理）。核心必须对上，否则 DSH 起不来。
 
-**本版 `0.13.11`** 面向 DSH `0.1.7-alpha.1`、`0.2.0-rc.1`、`0.2.0-rc.2`。更新的 prerelease（如 `0.2.1-rc.x`）不会自动覆盖。
+**本版 `0.14.0`** 面向 DSH `0.1.7-alpha.1`、`0.2.0-rc.1`、`0.2.0-rc.2`。更新的 prerelease（如 `0.2.1-rc.x`）不会自动覆盖。
 
-> **不要装 npm 上的 `dsh-workbuddy-connect`。** 那是上游包，和本仓库不是同一条线。
+> **本版没有发布到 npm。** npm 上的 `dsh-workbuddy-connect-functy` 停在 `0.13.11`，`dsh-workbuddy-connect` 则是另一条线（上游 `corrinehu` 的包）。**从本仓库的 GitHub 地址安装**才拿得到 `0.14.0`。
 
 ### 从界面安装
 
@@ -85,16 +86,10 @@ DSH 的 **添加插件** 对话框接受：npm 包名（可带版本）、Git �
 
 1. 打开 **设置 → 插件**（有的客户端写「扩展管理」）。
 2. 选 **添加插件**。
-3. 填下面任一标识，确认：
+3. 填入：
 
 ```text
-dsh-workbuddy-connect-functy
-```
-
-或：
-
-```text
-github:functy23/dsh-workbuddy-connect-functy
+github:adfnaa/dsh-workbuddy-connect-functy
 ```
 
 4. 装完**刷新页面**；没生效就**重启 DSH 客户端**。桌面 App 由它自己拉起 profile，不要用 `dsh --profile desktop` 当启动命令。
@@ -103,27 +98,23 @@ github:functy23/dsh-workbuddy-connect-functy
 
 把 `<profile>` 换成实际 profile（`web` / `desktop`）。
 
-从 npm（推荐）：
+从 GitHub（推荐；仓库里已有预构建 `lib/`，git 安装不会跑 `prepack`）：
 
 ```sh
-dsh plugin --profile <profile> add dsh-workbuddy-connect-functy
-```
-
-从 GitHub（仓库里已有预构建 `lib/`，git 安装不会跑 `prepack`）：
-
-```sh
-dsh plugin --profile <profile> add github:functy23/dsh-workbuddy-connect-functy
+dsh plugin --profile <profile> add github:adfnaa/dsh-workbuddy-connect-functy
 ```
 
 ```sh
 # Web
-dsh plugin --profile web add dsh-workbuddy-connect-functy
+dsh plugin --profile web add github:adfnaa/dsh-workbuddy-connect-functy
 dsh web
 ```
 
+> npm 上只有 `0.13.11`。要装 `0.14.0` 就得用上面的 GitHub 地址；写 npm 包名会拿到旧版。
+
 ```sh
 # Desktop（DSH 0.2+ 才让 CLI 管 desktop profile）
-dsh plugin --profile desktop add dsh-workbuddy-connect-functy
+dsh plugin --profile desktop add github:adfnaa/dsh-workbuddy-connect-functy
 ```
 
 DSH 0.2 之前 CLI 不接受 `desktop` profile，请走上面的界面安装。套壳桌面 App（如 DSH NEXT）的 CLI 入口是自带的 `desktop-cli`，它要求 PATH 上有 `pnpm`。

@@ -2,7 +2,7 @@
   "name": "dsh-workbuddy-connect-functy",
   "displayName": "DSH WorkBuddy Connect Functy",
   "description": "corrinehu/dsh-workbuddy-connect 的 Functy 分支：仪表盘界面、多账号轮换与额度展示，将 WorkBuddy 桌面 App 的模型接入 DeepSeek Harness。",
-  "version": "0.13.11",
+  "version": "0.14.0",
   "author": "Corrine Hu and Functy",
   "keywords": [
     "dsh-plugin",
@@ -51,10 +51,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/functy23/dsh-workbuddy-connect-functy.git"
+    "url": "git+https://github.com/adfnaa/dsh-workbuddy-connect-functy.git"
   },
-  "homepage": "https://github.com/functy23/dsh-workbuddy-connect-functy#readme",
-  "bugs": "https://github.com/functy23/dsh-workbuddy-connect-functy/issues",
+  "homepage": "https://github.com/adfnaa/dsh-workbuddy-connect-functy#readme",
+  "bugs": "https://github.com/adfnaa/dsh-workbuddy-connect-functy/issues",
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

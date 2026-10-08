@@ -6,19 +6,19 @@
 
 **A Functy fork of corrinehu/dsh-workbuddy-connect: dashboard UI, multi-account rotation and credit in the sidebar, bringing WorkBuddy desktop-app models into DeepSeek Harness.**
 
-[![dsh-workbuddy-connect-functy](https://img.shields.io/badge/dsh--workbuddy--connect--functy-0.13.11-4F46E5)](https://github.com/functy23/dsh-workbuddy-connect-functy)
+[![dsh-workbuddy-connect-functy](https://img.shields.io/badge/dsh--workbuddy--connect--functy-0.14.0-4F46E5)](https://github.com/adfnaa/dsh-workbuddy-connect-functy)
 [![Language](https://img.shields.io/badge/language-TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Top Language](https://img.shields.io/github/languages/top/functy23/dsh-workbuddy-connect-functy)](https://github.com/functy23/dsh-workbuddy-connect-functy)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/functy23/dsh-workbuddy-connect-functy)
+[![Top Language](https://img.shields.io/github/languages/top/adfnaa/dsh-workbuddy-connect-functy)](https://github.com/adfnaa/dsh-workbuddy-connect-functy)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/adfnaa/dsh-workbuddy-connect-functy)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-[![Downloads](https://img.shields.io/github/downloads/functy23/dsh-workbuddy-connect-functy/total)](https://github.com/functy23/dsh-workbuddy-connect-functy/releases)
-[![Stars](https://img.shields.io/github/stars/functy23/dsh-workbuddy-connect-functy)](https://github.com/functy23/dsh-workbuddy-connect-functy/stargazers)
-[![Repo Size](https://img.shields.io/github/repo-size/functy23/dsh-workbuddy-connect-functy)](https://github.com/functy23/dsh-workbuddy-connect-functy)
-[![Contributors](https://img.shields.io/github/contributors/functy23/dsh-workbuddy-connect-functy)](https://github.com/functy23/dsh-workbuddy-connect-functy/graphs/contributors)
+[![Downloads](https://img.shields.io/github/downloads/adfnaa/dsh-workbuddy-connect-functy/total)](https://github.com/adfnaa/dsh-workbuddy-connect-functy/releases)
+[![Stars](https://img.shields.io/github/stars/adfnaa/dsh-workbuddy-connect-functy)](https://github.com/adfnaa/dsh-workbuddy-connect-functy/stargazers)
+[![Repo Size](https://img.shields.io/github/repo-size/adfnaa/dsh-workbuddy-connect-functy)](https://github.com/adfnaa/dsh-workbuddy-connect-functy)
+[![Contributors](https://img.shields.io/github/contributors/adfnaa/dsh-workbuddy-connect-functy)](https://github.com/adfnaa/dsh-workbuddy-connect-functy/graphs/contributors)
 
-[Issues](https://github.com/functy23/dsh-workbuddy-connect-functy/issues) • [Changelog](CHANGELOG.md) • [English](README.en.md) / [中文](README.md)
+[Issues](https://github.com/adfnaa/dsh-workbuddy-connect-functy/issues) • [Changelog](CHANGELOG.md) • [English](README.en.md) / [中文](README.md)
 
 </div>
 
@@ -32,14 +32,14 @@ Both the CN **WorkBuddy** app and the international **WorkBuddy AI** app are sup
 
 Compared with upstream **0.7.1** (2026-10-01). Features both trees share are not listed as ours.
 
-| | Upstream `dsh-workbuddy-connect` 0.7.1 | This tree 0.13.11 |
+| | Upstream `dsh-workbuddy-connect` 0.7.1 | This tree 0.14.0 |
 |---|---|---|
 | UI | two legacy plugin cards in Settings | sidebar credit card + centre dashboard + settings section page |
 | Accounts | follows the desktop app's current sign-in | multi-account pool: rotation, QR, token, desktop adopt; a removed account is not swept back in |
 | Credit | on the settings card only | in the sidebar, remaining or used/total, can be hidden |
 | DSH | **`0.2.0-rc.2` only** | `0.1.7-alpha.1` / `0.2.0-rc.1` / `0.2.0-rc.2` |
 | Update notice | bottom-right reminder | not ported |
-| npm | `dsh-workbuddy-connect` | `dsh-workbuddy-connect-functy` |
+| npm | `dsh-workbuddy-connect` | `dsh-workbuddy-connect-functy` (not published for this release; stops at `0.13.11`) |
 
 Both trees have: CN/AI groups, image input, reasoning-effort detection, per-account model visibility, CN enterprise credit, picker rate/promo badges, Windows Electron discovery, per-region effort-rejection codes.
 
@@ -75,9 +75,9 @@ Choose which models appear in the picker:
 
 Prerequisite: the WorkBuddy desktop app is installed and signed in (same for WorkBuddy AI). A mismatched DSH core fails to start.
 
-**This release (`0.13.11`)** targets DSH `0.1.7-alpha.1`, `0.2.0-rc.1` and `0.2.0-rc.2`. Newer prereleases (e.g. `0.2.1-rc.x`) are not covered automatically.
+**This release (`0.14.0`)** targets DSH `0.1.7-alpha.1`, `0.2.0-rc.1` and `0.2.0-rc.2`. Newer prereleases (e.g. `0.2.1-rc.x`) are not covered automatically.
 
-> **Do not install npm's `dsh-workbuddy-connect`.** That is the upstream package, a different code line.
+> **This release is not on npm.** npm's `dsh-workbuddy-connect-functy` stops at `0.13.11`, and `dsh-workbuddy-connect` is a different code line (upstream `corrinehu`'s package). Install from **this repository's GitHub address** to get `0.14.0`.
 
 ### From the UI
 
@@ -85,16 +85,10 @@ DSH **Add plugin** accepts a package name (optional version), a Git address, a t
 
 1. Open **Settings → Plugins** (some clients label this Extensions).
 2. Choose **Add plugin**.
-3. Paste either identifier and confirm:
+3. Paste:
 
 ```text
-dsh-workbuddy-connect-functy
-```
-
-or:
-
-```text
-github:functy23/dsh-workbuddy-connect-functy
+github:adfnaa/dsh-workbuddy-connect-functy
 ```
 
 4. **Reload the page**; if nothing changed, **restart the DSH client**. The desktop app starts its own profile — do not use `dsh --profile desktop` as a launcher.
@@ -103,27 +97,23 @@ github:functy23/dsh-workbuddy-connect-functy
 
 Replace `<profile>` with the profile you use (`web` / `desktop`).
 
-From npm (recommended):
+From GitHub (recommended; the repo ships prebuilt `lib/`, and git installs do not run `prepack`):
 
 ```sh
-dsh plugin --profile <profile> add dsh-workbuddy-connect-functy
-```
-
-From GitHub (the repo ships prebuilt `lib/`; git installs do not run `prepack`):
-
-```sh
-dsh plugin --profile <profile> add github:functy23/dsh-workbuddy-connect-functy
+dsh plugin --profile <profile> add github:adfnaa/dsh-workbuddy-connect-functy
 ```
 
 ```sh
 # Web
-dsh plugin --profile web add dsh-workbuddy-connect-functy
+dsh plugin --profile web add github:adfnaa/dsh-workbuddy-connect-functy
 dsh web
 ```
 
+> npm only carries `0.13.11`. Use the GitHub address above for `0.14.0`; naming the npm package gets you the older build.
+
 ```sh
 # Desktop (DSH 0.2+ lets the CLI manage the desktop profile)
-dsh plugin --profile desktop add dsh-workbuddy-connect-functy
+dsh plugin --profile desktop add github:adfnaa/dsh-workbuddy-connect-functy
 ```
 
 Before DSH 0.2 the CLI refused the `desktop` profile — use the UI path above. A wrapped desktop app (e.g. DSH NEXT) exposes CLI through its bundled `desktop-cli`, which needs `pnpm` on PATH.

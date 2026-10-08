@@ -78,6 +78,8 @@ const EXACT_REASONS: readonly ExactReason[] = [
   // src/index.ts — the manual check-in action's fallback, when the upstream
   // gave no message of its own.
   { reason: 'check-in failed', key: 'hostCheckInFailed' },
+  // src/checkin.ts — the check-in found no credential to send with.
+  { reason: 'no credential to check in with', key: 'hostCheckInNoCredential' },
 ]
 
 /**

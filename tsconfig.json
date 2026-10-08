@@ -33,6 +33,7 @@
     "tests/qr-code.spec.ts",
     "tests/credit-badge.spec.ts",
     "tests/settings-page.spec.ts",
+    "tests/checkin-section.spec.ts",
     "tests/segmented.spec.ts",
     "tests/panel-view.spec.ts"
   ]
