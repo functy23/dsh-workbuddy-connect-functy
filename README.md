@@ -194,6 +194,8 @@ dsh plugin --profile <profile> exec dsh-workbuddy-connect doctor
 - [franksong2702/dsh-codex-connect](https://github.com/franksong2702/dsh-codex-connect)（Apache-2.0）— 插件结构与输入框「推理等级」控件的参照。
 - [Sliverkiss/workbuddy2api](https://github.com/Sliverkiss/workbuddy2api)（MIT）— 上游协议参照。
 
+维护这个分支、想跟 `functy23/dsh-workbuddy-connect-functy` 同步的话，见 [docs/upstream-sync.md](./docs/upstream-sync.md)：怎么配 remote、怎么 rebase，以及为了少冲突而遵守的几条约定。
+
 ## 许可证
 
 [MIT](./LICENSE) © 2026 Corrine Hu and Functy

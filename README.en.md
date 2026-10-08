@@ -194,6 +194,8 @@ For personal learning and research only, driving your own account on your own ma
 - [franksong2702/dsh-codex-connect](https://github.com/franksong2702/dsh-codex-connect) (Apache-2.0) — plugin structure and the composer reasoning-level control.
 - [Sliverkiss/workbuddy2api](https://github.com/Sliverkiss/workbuddy2api) (MIT) — upstream protocol.
 
+If you maintain this branch and want to keep it in step with `functy23/dsh-workbuddy-connect-functy`, see [docs/upstream-sync.md](./docs/upstream-sync.md): how to wire the remote, how to rebase, and the conventions that keep the conflict surface small.
+
 ## License
 
 [MIT](./LICENSE) © 2026 Corrine Hu and Functy
