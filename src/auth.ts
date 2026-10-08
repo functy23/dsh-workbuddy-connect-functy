@@ -1,8 +1,8 @@
 /**
  * WorkBuddy credential resolution. The primary source is the WorkBuddy
- * desktop app's own auth file, read-only; a plugin-owned copy under
- * `$DSH_HOME` holds token refreshes so the desktop file is never written.
- * The effective credential is whichever of the two expires later, so a
+ * desktop app's own auth file, read-only; a plugin-owned copy in the plugin's
+ * own config directory holds token refreshes so the desktop file is never
+ * written. The effective credential is whichever of the two expires later, so a
  * refresh by either side wins.
  *
  * @module dsh-workbuddy-connect/auth
@@ -12,8 +12,8 @@ import { readFile, rm } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { withFileLock, writeFileAtomic } from '@deepseek-ai/dsh-atomic-write'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { parseJsonObject } from './json-value.ts'
+import { workbuddyConfigDir } from './paths.ts'
 import { regionOf } from './upstream.ts'
 import {
   WorkBuddyAtRestKeyProvider,
@@ -62,7 +62,7 @@ export interface WorkBuddyStoreOptions {
   variant?: WorkBuddyVariant
   /** Explicit desktop auth-file path, overriding env and platform defaults. */
   desktopPath?: string
-  /** Explicit plugin-owned copy path, defaulting under `$DSH_HOME`. */
+  /** Explicit plugin-owned copy path, defaulting into the plugin's config directory. */
   ownPath?: string
   /** Performs the upstream token refresh. */
   refresh: (credential: WorkBuddyCredential) => Promise<WorkBuddyRefreshOutcome>
@@ -77,7 +77,7 @@ export interface WorkBuddyStoreOptions {
   keyProvider?: Pick<WorkBuddyAtRestKeyProvider, 'protectorKeyFor' | 'helperPath'>
 }
 
-/** Basename of the plugin-owned credential copy inside the Harness home. */
+/** Basename of the plugin-owned credential copy inside the plugin's config directory. */
 export const WORKBUDDY_AUTH_FILENAME = '.workbuddy-auth.json'
 
 /** Env variable that overrides the desktop auth-file location. */
@@ -91,9 +91,9 @@ interface OwnDocument {
   credential: WorkBuddyCredential
 }
 
-/** Plugin-owned copy path inside the Harness home. */
+/** Plugin-owned copy path inside the plugin's config directory. */
 export function workbuddyOwnAuthPath(): string {
-  return join(resolveDshHome(), WORKBUDDY_AUTH_FILENAME)
+  return join(workbuddyConfigDir(), WORKBUDDY_AUTH_FILENAME)
 }
 
 const DESKTOP_AUTH_RELATIVE_PATH = ['CodeBuddyExtension', 'Data', 'Public', 'auth', 'workbuddy-desktop.info'] as const
@@ -307,7 +307,7 @@ export class WorkBuddyCredentialStore {
     this.variant = options.variant
     this.refresh = options.refresh
     this.refreshMarginMs = options.refreshMarginMs ?? 5 * 60 * 1000
-    this.ownPath = options.ownPath ?? (options.variant ? join(resolveDshHome(), options.variant.ownFilename) : workbuddyOwnAuthPath())
+    this.ownPath = options.ownPath ?? (options.variant ? join(workbuddyConfigDir(), options.variant.ownFilename) : workbuddyOwnAuthPath())
     // Legacy stores without a variant stay on the CN product the store's other
     // defaults already assume (own-copy filename, auth env var); a variant
     // without an electron profile falls back by id, keeping externally

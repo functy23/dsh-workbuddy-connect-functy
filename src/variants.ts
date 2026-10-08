@@ -48,10 +48,10 @@ export interface WorkBuddyVariant {
   electron?: WorkBuddyElectronProduct
   /** Basename of the desktop app's own auth file in the shared auth directory. */
   desktopFilename: string
-  /** Basename of the plugin-owned credential copy under `$DSH_HOME`. */
+  /** Basename of the plugin-owned credential copy in the plugin's config directory. */
   ownFilename: string
   /**
-   * Basename of the plugin-owned account-pool file under `$DSH_HOME`.
+   * Basename of the plugin-owned account-pool file in the plugin's config directory.
    *
    * One pool per variant, for the same reason the catalogs are split: the two
    * products are separate subscriptions, and an account signed into one has no
@@ -61,18 +61,18 @@ export interface WorkBuddyVariant {
    */
   accountFilename: string
   /**
-   * Basename of the plugin-owned context-length preference file under
-   * `$DSH_HOME`.
+   * Basename of the plugin-owned context-length preference file in the plugin's
+   * config directory.
    *
    * One per variant for the same reason as the pools: the two products declare
    * different windows for the same model id, so a length chosen for one must not
    * be applied to the other.
    */
   contextFilename: string
-  /** Basename of the plugin-owned probe-record file under `$DSH_HOME`. */
+  /** Basename of the plugin-owned probe-record file in the plugin's state directory. */
   probeFilename: string
   /**
-   * Basename of the plugin-owned request-usage file under `$DSH_HOME`.
+   * Basename of the plugin-owned request-usage file in the plugin's state directory.
    *
    * One per variant like the pools and catalogs: the two products have separate
    * subscriptions, so one product's request tally must never be read as the
@@ -80,7 +80,7 @@ export interface WorkBuddyVariant {
    */
   usageFilename: string
   /**
-   * Basename of the plugin-owned saved-catalog file under `$DSH_HOME`.
+   * Basename of the plugin-owned saved-catalog file in the plugin's state directory.
    *
    * One per variant, like the probe records: the two endpoints disagree about
    * rates, windows, and even which models exist for a shared id, so a catalog
@@ -88,8 +88,8 @@ export interface WorkBuddyVariant {
    */
   catalogFilename: string
   /**
-   * Basename of the plugin-owned per-account model-visibility file under
-   * `$DSH_HOME`.
+   * Basename of the plugin-owned per-account model-visibility file in the
+   * plugin's config directory.
    *
    * One per variant, for the same reason as the catalogs and probe records:
    * the two endpoints share model ids, so one variant's hidden list must never

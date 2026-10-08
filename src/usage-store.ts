@@ -33,12 +33,12 @@
 import { readStoreDocument, writeStoreDocument } from './store-file.ts'
 import { isJsonObject, parseJsonObject } from './json-value.ts'
 import { join } from 'node:path'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { workbuddyStateDir } from './paths.ts'
 
 /** On-disk format this reader accepts; other versions are discarded. */
 const USAGE_FORMAT_VERSION = 1
 
-/** Basename of the CN variant's usage file inside the Harness home. */
+/** Basename of the CN variant's usage file inside the plugin's state directory. */
 export const WORKBUDDY_USAGE_FILENAME = '.workbuddy-usage.json'
 
 /**
@@ -94,9 +94,9 @@ interface UsageDocument {
   accounts: Record<string, WorkBuddyUsageCounters>
 }
 
-/** Plugin-owned usage-file path inside the Harness home. */
+/** Plugin-owned usage-file path inside the plugin's state directory. */
 export function workbuddyUsagePath(filename: string = WORKBUDDY_USAGE_FILENAME): string {
-  return join(resolveDshHome(), filename)
+  return join(workbuddyStateDir(), filename)
 }
 
 /** Whether a parsed value is a counter record this reader can trust. */
@@ -235,7 +235,7 @@ export function usageFieldNames(block: unknown): string[] {
 
 /** Options for {@link WorkBuddyUsageStore}. */
 export interface WorkBuddyUsageStoreOptions {
-  /** Explicit state-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit state-file path, overriding the plugin's state-directory default. */
   path?: string
   /** Injectable clock, for tests. */
   now?: () => number

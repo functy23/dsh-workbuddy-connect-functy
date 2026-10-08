@@ -1,14 +1,15 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context, Service } from '@deepseek-ai/cordis'
 import LlmRuntime from '@deepseek-ai/dsh-llm'
 import { FakeSettingsService } from './fake-settings.ts'
 import * as WorkBuddy from '../src/index.ts'
 import { WorkBuddyAccountService } from '../src/account-service.ts'
-import { fingerprintModel } from '../src/probe-store.ts'
+import { fingerprintModel, workbuddyProbePath } from '../src/probe-store.ts'
+import { workbuddyCatalogPath } from '../src/catalog-store.ts'
 
 /**
  * Catalog lifecycle: what happens across a credential change and a failed fetch.
@@ -312,7 +313,9 @@ describe('catalog lifecycle', () => {
       supportsImages: true,
       reasoning: { supports: false, onlyReasoning: false, canDisableThinking: true },
     }
-    await writeFile(join(root, '.workbuddy-probe.json'), JSON.stringify({
+    const probeAt = workbuddyProbePath()
+    await mkdir(dirname(probeAt), { recursive: true })
+    await writeFile(probeAt, JSON.stringify({
       version: 2,
       records: {
         'uid-a:ent-1': {
@@ -577,7 +580,7 @@ describe('identity changes during catalog loading', () => {
     await vi.waitFor(async () => {
       expect((await ctx.llm.listModels('workbuddy')).map(model => model.id)).toEqual(['account-b-model'])
     })
-    const saved = JSON.parse(await readFile(join(root, '.workbuddy-catalog.json'), 'utf8')) as { entries: Record<string, unknown> }
+    const saved = JSON.parse(await readFile(workbuddyCatalogPath(), 'utf8')) as { entries: Record<string, unknown> }
     expect(saved.entries['uid-a:ent-1']).toBeUndefined()
     expect(saved.entries['uid-b:ent-1']).toBeDefined()
   }, 45_000)

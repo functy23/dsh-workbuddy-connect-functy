@@ -1,6 +1,6 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 /**
@@ -31,6 +31,7 @@ import {
   writeHostHeartbeat,
   WORKBUDDY_HOST_HEARTBEAT_FILENAME,
 } from '../src/host-heartbeat.ts'
+import { WORKBUDDY_DATA_DIR_NAME, WORKBUDDY_STATE_DIR_NAME } from '../src/paths.ts'
 import { WORKBUDDY_CONNECT_VERSION } from '../src/version.ts'
 
 let root: string | undefined
@@ -61,8 +62,11 @@ describe('host heartbeat', () => {
     expect(typeof heartbeat!.registeredAt).toBe('number')
     expect(heartbeat!.pluginVersion).toBe(WORKBUDDY_CONNECT_VERSION)
 
-    // The file lives at the expected path.
-    expect(workbuddyHostHeartbeatPath()).toBe(join(root, WORKBUDDY_HOST_HEARTBEAT_FILENAME))
+    // The file lives at the expected path: the plugin's own state directory,
+    // under the harness home this test pinned as the fallback.
+    expect(workbuddyHostHeartbeatPath()).toBe(
+      join(root, WORKBUDDY_DATA_DIR_NAME, WORKBUDDY_STATE_DIR_NAME, WORKBUDDY_HOST_HEARTBEAT_FILENAME),
+    )
 
     // Live PID is detectable.
     expect(isHeartbeatProcessAlive(heartbeat!)).toBe(true)
@@ -104,17 +108,23 @@ describe('host heartbeat', () => {
   it('treats a malformed heartbeat file as absent', async () => {
     root = await mkdtemp(join(tmpdir(), 'wb-heartbeat-malformed-'))
     vi.stubEnv('DSH_HOME', root)
-    const { writeFile } = await import('node:fs/promises')
-    await writeFile(workbuddyHostHeartbeatPath(), '{ not json', 'utf8')
+    const { mkdir: makeDir, writeFile } = await import('node:fs/promises')
+    // The state directory is normally created by the heartbeat's own write, so
+    // a test that plants a file has to create the tree the plugin would have.
+    const path = workbuddyHostHeartbeatPath()
+    await makeDir(dirname(path), { recursive: true })
+    await writeFile(path, '{ not json', 'utf8')
     expect(await readHostHeartbeat()).toBeUndefined()
   })
 
   it('rejects a heartbeat with the wrong format version', async () => {
     root = await mkdtemp(join(tmpdir(), 'wb-heartbeat-wrongver-'))
     vi.stubEnv('DSH_HOME', root)
-    const { writeFile } = await import('node:fs/promises')
+    const { mkdir: makeDir, writeFile } = await import('node:fs/promises')
+    const path = workbuddyHostHeartbeatPath()
+    await makeDir(dirname(path), { recursive: true })
     await writeFile(
-      workbuddyHostHeartbeatPath(),
+      path,
       JSON.stringify({ version: 99, package: 'dsh-workbuddy-connect-functy', registeredAt: Date.now(), pid: process.pid }),
       'utf8',
     )

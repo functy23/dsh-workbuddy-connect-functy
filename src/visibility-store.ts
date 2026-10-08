@@ -27,12 +27,12 @@
  */
 
 import { join } from 'node:path'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { workbuddyConfigDir } from './paths.ts'
 
 /** On-disk format this reader accepts; other versions are discarded. */
 const VISIBILITY_FORMAT_VERSION = 1
 
-/** Basename of the CN variant's visibility file inside the Harness home. */
+/** Basename of the CN variant's visibility file inside the plugin's config directory. */
 export const WORKBUDDY_VISIBILITY_FILENAME = '.workbuddy-model-visibility.json'
 
 /** One account's saved preferences: the account they belong to and its hidden ids. */
@@ -67,9 +67,9 @@ interface VisibilityDocument {
   accounts: Record<string, SavedVisibility>
 }
 
-/** Plugin-owned visibility-file path inside the Harness home. */
+/** Plugin-owned visibility-file path inside the plugin's config directory. */
 export function workbuddyVisibilityPath(filename: string = WORKBUDDY_VISIBILITY_FILENAME): string {
-  return join(resolveDshHome(), filename)
+  return join(workbuddyConfigDir(), filename)
 }
 
 /** Whether a parsed value is a saved preference entry this reader can trust. */
@@ -88,7 +88,7 @@ function isSaved(value: unknown): value is SavedVisibility {
 
 /** Options for {@link WorkBuddyVisibilityStore}. */
 export interface WorkBuddyVisibilityStoreOptions {
-  /** Explicit state-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit state-file path, overriding the plugin's config-directory default. */
   path?: string
 }
 

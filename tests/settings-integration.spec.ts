@@ -6,6 +6,7 @@ import { Context } from '@deepseek-ai/cordis'
 import LlmRuntime from '@deepseek-ai/dsh-llm'
 import { FakeSettingsService } from './fake-settings.ts'
 import * as WorkBuddy from '../src/index.ts'
+import { workbuddyConfigDir } from '../src/paths.ts'
 
 let context: Context | undefined
 let root: string | undefined
@@ -284,7 +285,7 @@ describe('WorkBuddy Host settings integration', () => {
     // surfacing as a timeout. Two sweeps at the 100 ms interval above.
     await new Promise(resolve => setTimeout(resolve, 400))
     const poolUids = async (file: string): Promise<string[]> => {
-      const parsed = JSON.parse(await readFile(join(root as string, file), 'utf8')) as { accounts?: { uid?: string }[] }
+      const parsed = JSON.parse(await readFile(join(workbuddyConfigDir(), file), 'utf8')) as { accounts?: { uid?: string }[] }
       return (parsed.accounts ?? []).map(account => account.uid ?? '')
     }
     // The refused CN credential is nowhere in the AI pool, and the account that

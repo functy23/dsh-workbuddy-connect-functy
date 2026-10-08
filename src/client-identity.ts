@@ -25,7 +25,7 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { writeFileAtomic } from '@deepseek-ai/dsh-atomic-write'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { workbuddyStateDir } from './paths.ts'
 import {
   FALLBACK_APP_VERSION,
   readBundleVersion,
@@ -46,7 +46,7 @@ import type { WorkBuddyRegion } from './upstream.ts'
 export const FALLBACK_CN_APP_VERSION = '5.5.6'
 
 /**
- * Basename of the CN saved-version cache under `$DSH_HOME`.
+ * Basename of the CN saved-version cache inside the plugin's state directory.
  *
  * Deliberately not the international `.workbuddy-ai-version.json`: that file
  * feeds the international catalog's User-Agent, and a CN App writing its
@@ -143,7 +143,7 @@ export interface ResolveChatIdentityOptions {
   resolveIntl?: () => Promise<AppVersionInfo>
   /** CLI-version reader; defaults to reading the bundle's `cli/package.json`. */
   cliVersion?: (bundle: string) => Promise<string | undefined>
-  /** CN saved-cache path; defaults to `$DSH_HOME/.workbuddy-app-version.json`. */
+  /** CN saved-cache path; defaults to `.workbuddy-app-version.json` in the plugin's state directory. */
   cnSavedPath?: string
 }
 
@@ -160,7 +160,7 @@ async function installedCnApp(): Promise<{ version: string; bundle: string } | u
 
 /** Default CN saved-cache path. */
 function cnSavedVersionPath(): string {
-  return join(resolveDshHome(), CN_APP_VERSION_FILENAME)
+  return join(workbuddyStateDir(), CN_APP_VERSION_FILENAME)
 }
 
 /**

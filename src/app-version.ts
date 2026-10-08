@@ -20,7 +20,7 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { writeFileAtomic } from '@deepseek-ai/dsh-atomic-write'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { workbuddyStateDir } from './paths.ts'
 
 /**
  * Last-resort UA version.
@@ -32,7 +32,7 @@ import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
  */
 export const FALLBACK_APP_VERSION = '5.5.2'
 
-/** Basename of the saved version under `$DSH_HOME`. */
+/** Basename of the saved version inside the plugin's state directory. */
 export const WORKBUDDY_APP_VERSION_FILENAME = '.workbuddy-ai-version.json'
 
 /** Where the version came from, for `doctor` output. */
@@ -101,9 +101,9 @@ export async function installedAppVersion(): Promise<{ version: string; bundle: 
   return undefined
 }
 
-/** Saved-version file path under the Harness home. */
+/** Saved-version file path inside the plugin's state directory. */
 export function appVersionPath(): string {
-  return join(resolveDshHome(), WORKBUDDY_APP_VERSION_FILENAME)
+  return join(workbuddyStateDir(), WORKBUDDY_APP_VERSION_FILENAME)
 }
 
 /** Constructor dependencies; all injectable so tests never touch the real FS. */

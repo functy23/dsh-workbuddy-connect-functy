@@ -21,7 +21,7 @@
  */
 
 import { join } from 'node:path'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { workbuddyStateDir } from './paths.ts'
 import { readStoreDocument, writeStoreDocument } from './store-file.ts'
 import { isJsonObject } from './json-value.ts'
 import type { WorkBuddyUpstreamModel } from './upstream.ts'
@@ -29,7 +29,7 @@ import type { WorkBuddyUpstreamModel } from './upstream.ts'
 /** On-disk format this reader accepts; other versions are discarded. */
 const CATALOG_FORMAT_VERSION = 1
 
-/** Basename of the CN variant's saved catalog inside the Harness home. */
+/** Basename of the CN variant's saved catalog inside the plugin's state directory. */
 export const WORKBUDDY_CATALOG_FILENAME = '.workbuddy-catalog.json'
 
 /** One saved catalog: the account it belonged to, and the models it listed. */
@@ -50,9 +50,9 @@ interface CatalogDocument {
   entries: Record<string, SavedCatalog>
 }
 
-/** Plugin-owned saved-catalog path inside the Harness home. */
+/** Plugin-owned saved-catalog path inside the plugin's state directory. */
 export function workbuddyCatalogPath(filename: string = WORKBUDDY_CATALOG_FILENAME): string {
-  return join(resolveDshHome(), filename)
+  return join(workbuddyStateDir(), filename)
 }
 
 /** Whether a parsed value is a model row worth keeping. */
@@ -80,7 +80,7 @@ function isSaved(value: unknown): value is SavedCatalog {
 
 /** Options for {@link WorkBuddyCatalogStore}. */
 export interface WorkBuddyCatalogStoreOptions {
-  /** Explicit state-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit state-file path, overriding the plugin's state-directory default. */
   path?: string
 }
 

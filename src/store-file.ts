@@ -1,6 +1,6 @@
 /**
  * The on-disk shape every plugin-owned store shares: a version-tagged JSON
- * document under `$DSH_HOME`, written atomically and read as "nothing saved"
+ * document in the plugin's own data directory, written atomically and read as "nothing saved"
  * whenever anything about it is wrong.
  *
  * Six stores implement that same policy — the account pool, the saved catalog,

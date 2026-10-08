@@ -1,7 +1,8 @@
 /**
- * Host-side heartbeat: a small JSON file written under `$DSH_HOME` once the
- * `workbuddy` provider is registered. The status CLI reads it to report
- * whether the host bundle is alive, independent of the browser card.
+ * Host-side heartbeat: a small JSON file written into the plugin's own state
+ * directory once the `workbuddy` provider is registered. The status CLI reads
+ * it to report whether the host bundle is alive, independent of the browser
+ * card.
  *
  * The browser (client) bundle cannot write files; its health is reported
  * only through `console.error` on failure (see `src/client/index.tsx`).
@@ -12,12 +13,12 @@
  */
 
 import { execFileSync } from 'node:child_process'
-import { readFile, rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import { workbuddyStateDir } from './paths.ts'
 import { WORKBUDDY_CONNECT_VERSION } from './version.ts'
 
-/** Basename of the host heartbeat file inside the Harness home. */
+/** Basename of the host heartbeat file inside the plugin's state directory. */
 export const WORKBUDDY_HOST_HEARTBEAT_FILENAME = '.workbuddy-host-heartbeat.json'
 
 /** Current on-disk heartbeat format; readers reject others. */
@@ -36,7 +37,7 @@ export interface WorkBuddyHostHeartbeat {
 
 /** Absolute path of the host heartbeat file. */
 export function workbuddyHostHeartbeatPath(): string {
-  return join(resolveDshHome(), WORKBUDDY_HOST_HEARTBEAT_FILENAME)
+  return join(workbuddyStateDir(), WORKBUDDY_HOST_HEARTBEAT_FILENAME)
 }
 
 /**
@@ -53,7 +54,12 @@ export async function writeHostHeartbeat(): Promise<void> {
     pid: process.pid,
   }
   try {
-    await writeFile(workbuddyHostHeartbeatPath(), JSON.stringify(document), 'utf8')
+    const path = workbuddyHostHeartbeatPath()
+    // The state directory is created here rather than assumed: the old layout
+    // wrote into `$DSH_HOME`, which always exists, while `state/` is created by
+    // whichever store writes first — and this write can be the first one.
+    await mkdir(dirname(path), { recursive: true })
+    await writeFile(path, JSON.stringify(document), 'utf8')
   } catch {
     // Non-fatal: the CLI status will show "heartbeat missing".
   }

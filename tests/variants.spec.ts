@@ -1,6 +1,6 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { WorkBuddyCredentialStore, desktopAuthCandidatesFor, parseWorkBuddyAuth } from '../src/auth.ts'
 import { FALLBACK_WORKBUDDY_AI_MODELS, FALLBACK_WORKBUDDY_MODELS, WorkBuddyCatalog } from '../src/catalog.ts'
@@ -204,7 +204,9 @@ describe('credential region separation', () => {
     expect(cn.ownAuthPath()).not.toBe(ai.ownAuthPath())
     expect(cn.desktopAuthPath()).not.toBe(ai.desktopAuthPath())
 
-    // logout removes only its own copy.
+    // logout removes only its own copy. The plugin's own directory is created
+    // by whichever store writes first, and this test writes before any does.
+    await mkdir(dirname(ai.ownAuthPath()), { recursive: true })
     await writeFile(ai.ownAuthPath(), '{}')
     await cn.logout()
     await expect(readFile(ai.ownAuthPath(), 'utf8')).resolves.toBe('{}')

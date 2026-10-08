@@ -6,7 +6,7 @@ import { Context } from "@deepseek-ai/cordis";
 import { SettingsNamespace } from "@deepseek-ai/dsh-settings";
 import { AttachmentStore } from "@deepseek-ai/dsh-attachment";
 //#region src/app-version.d.ts
-/** Basename of the saved version under `$DSH_HOME`. */
+/** Basename of the saved version inside the plugin's state directory. */
 declare const WORKBUDDY_APP_VERSION_FILENAME = ".workbuddy-ai-version.json";
 /** Where the version came from, for `doctor` output. */
 type WorkBuddyAppVersionSource = 'installed' | 'saved' | 'fallback';
@@ -85,7 +85,7 @@ declare function appUserAgent(version: string): string;
  */
 declare const FALLBACK_CN_APP_VERSION = "5.5.6";
 /**
- * Basename of the CN saved-version cache under `$DSH_HOME`.
+ * Basename of the CN saved-version cache inside the plugin's state directory.
  *
  * Deliberately not the international `.workbuddy-ai-version.json`: that file
  * feeds the international catalog's User-Agent, and a CN App writing its
@@ -137,7 +137,7 @@ interface ResolveChatIdentityOptions {
   resolveIntl?: () => Promise<AppVersionInfo>;
   /** CLI-version reader; defaults to reading the bundle's `cli/package.json`. */
   cliVersion?: (bundle: string) => Promise<string | undefined>;
-  /** CN saved-cache path; defaults to `$DSH_HOME/.workbuddy-app-version.json`. */
+  /** CN saved-cache path; defaults to `.workbuddy-app-version.json` in the plugin's state directory. */
   cnSavedPath?: string;
 }
 /**
@@ -677,10 +677,10 @@ interface WorkBuddyVariant {
   electron?: WorkBuddyElectronProduct;
   /** Basename of the desktop app's own auth file in the shared auth directory. */
   desktopFilename: string;
-  /** Basename of the plugin-owned credential copy under `$DSH_HOME`. */
+  /** Basename of the plugin-owned credential copy in the plugin's config directory. */
   ownFilename: string;
   /**
-   * Basename of the plugin-owned account-pool file under `$DSH_HOME`.
+   * Basename of the plugin-owned account-pool file in the plugin's config directory.
    *
    * One pool per variant, for the same reason the catalogs are split: the two
    * products are separate subscriptions, and an account signed into one has no
@@ -690,18 +690,18 @@ interface WorkBuddyVariant {
    */
   accountFilename: string;
   /**
-   * Basename of the plugin-owned context-length preference file under
-   * `$DSH_HOME`.
+   * Basename of the plugin-owned context-length preference file in the plugin's
+   * config directory.
    *
    * One per variant for the same reason as the pools: the two products declare
    * different windows for the same model id, so a length chosen for one must not
    * be applied to the other.
    */
   contextFilename: string;
-  /** Basename of the plugin-owned probe-record file under `$DSH_HOME`. */
+  /** Basename of the plugin-owned probe-record file in the plugin's state directory. */
   probeFilename: string;
   /**
-   * Basename of the plugin-owned request-usage file under `$DSH_HOME`.
+   * Basename of the plugin-owned request-usage file in the plugin's state directory.
    *
    * One per variant like the pools and catalogs: the two products have separate
    * subscriptions, so one product's request tally must never be read as the
@@ -709,7 +709,7 @@ interface WorkBuddyVariant {
    */
   usageFilename: string;
   /**
-   * Basename of the plugin-owned saved-catalog file under `$DSH_HOME`.
+   * Basename of the plugin-owned saved-catalog file in the plugin's state directory.
    *
    * One per variant, like the probe records: the two endpoints disagree about
    * rates, windows, and even which models exist for a shared id, so a catalog
@@ -717,8 +717,8 @@ interface WorkBuddyVariant {
    */
   catalogFilename: string;
   /**
-   * Basename of the plugin-owned per-account model-visibility file under
-   * `$DSH_HOME`.
+   * Basename of the plugin-owned per-account model-visibility file in the
+   * plugin's config directory.
    *
    * One per variant, for the same reason as the catalogs and probe records:
    * the two endpoints share model ids, so one variant's hidden list must never
@@ -975,7 +975,7 @@ interface WorkBuddyStoreOptions {
   variant?: WorkBuddyVariant;
   /** Explicit desktop auth-file path, overriding env and platform defaults. */
   desktopPath?: string;
-  /** Explicit plugin-owned copy path, defaulting under `$DSH_HOME`. */
+  /** Explicit plugin-owned copy path, defaulting into the plugin's config directory. */
   ownPath?: string;
   /** Performs the upstream token refresh. */
   refresh: (credential: WorkBuddyCredential) => Promise<WorkBuddyRefreshOutcome>;
@@ -989,11 +989,11 @@ interface WorkBuddyStoreOptions {
    */
   keyProvider?: Pick<WorkBuddyAtRestKeyProvider, 'protectorKeyFor' | 'helperPath'>;
 }
-/** Basename of the plugin-owned credential copy inside the Harness home. */
+/** Basename of the plugin-owned credential copy inside the plugin's config directory. */
 declare const WORKBUDDY_AUTH_FILENAME = ".workbuddy-auth.json";
 /** Env variable that overrides the desktop auth-file location. */
 declare const WORKBUDDY_AUTH_FILE_ENV = "WORKBUDDY_AUTH_FILE";
-/** Plugin-owned copy path inside the Harness home. */
+/** Plugin-owned copy path inside the plugin's config directory. */
 declare function workbuddyOwnAuthPath(): string;
 /**
  * Platform-default candidates for the WorkBuddy desktop app's auth file, in
@@ -1377,7 +1377,7 @@ declare class WorkBuddyCatalog {
 }
 //#endregion
 //#region src/probe-store.d.ts
-/** Basename of the probe record inside the Harness home. */
+/** Basename of the probe record inside the plugin's state directory. */
 declare const WORKBUDDY_PROBE_FILENAME = ".workbuddy-probe.json";
 /**
  * Whether the model's effort parameter is actually validated.
@@ -1414,7 +1414,7 @@ interface WorkBuddyProbeRecord {
   account: string;
 }
 /**
- * Plugin-owned probe record path inside the Harness home.
+ * Plugin-owned probe record path inside the plugin's state directory.
  *
  * One file per variant. Same-named models exist on both endpoints (the
  * international catalog repeats `glm-5.3`, `glm-5.2`, `hy3`, `kimi-k2.6`), and
@@ -1434,7 +1434,7 @@ declare function workbuddyProbePath(filename?: string): string;
 declare function fingerprintModel(info: WorkBuddyModelInfo): string;
 /** Options for {@link WorkBuddyProbeStore}. */
 interface WorkBuddyProbeStoreOptions {
-  /** Explicit state-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit state-file path, overriding the plugin's state-directory default. */
   path?: string;
   /** Observation lifetime; defaults to 14 days. */
   ttlMs?: number;
@@ -1660,7 +1660,7 @@ interface WorkBuddyAdapter {
 declare function createWorkBuddyAdapter(options: WorkBuddyAdapterOptions): WorkBuddyAdapter;
 //#endregion
 //#region src/account-pool.d.ts
-/** Basename of the CN variant's account-pool file inside the Harness home. */
+/** Basename of the CN variant's account-pool file in the plugin's config directory. */
 declare const WORKBUDDY_ACCOUNTS_FILENAME = ".workbuddy-accounts.json";
 /** Why an account was benched. */
 type WorkBuddyCooldownReason = 'rate' | 'credit' | 'session';
@@ -1787,10 +1787,10 @@ declare function credentialOf(account: WorkBuddyAccount): WorkBuddyCredential;
 /** Options for {@link WorkBuddyAccountPool}. */
 interface WorkBuddyAccountPoolOptions {
   variant: WorkBuddyVariant;
-  /** Explicit pool-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit pool-file path, overriding the plugin's config-directory default. */
   path?: string;
 }
-/** Pool-file path for one variant inside the Harness home. */
+/** Pool-file path for one variant inside the plugin's config directory. */
 declare function workbuddyAccountsPath(filename?: string): string;
 /**
  * The account pool for one variant.
@@ -2486,7 +2486,7 @@ declare class WorkBuddyRotation {
 }
 //#endregion
 //#region src/catalog-store.d.ts
-/** Basename of the CN variant's saved catalog inside the Harness home. */
+/** Basename of the CN variant's saved catalog inside the plugin's state directory. */
 declare const WORKBUDDY_CATALOG_FILENAME = ".workbuddy-catalog.json";
 /** One saved catalog: the account it belonged to, and the models it listed. */
 interface SavedCatalog {
@@ -2500,11 +2500,11 @@ interface SavedCatalog {
   /** App version used as the UA, when the variant needed one. */
   appVersion?: string;
 }
-/** Plugin-owned saved-catalog path inside the Harness home. */
+/** Plugin-owned saved-catalog path inside the plugin's state directory. */
 declare function workbuddyCatalogPath(filename?: string): string;
 /** Options for {@link WorkBuddyCatalogStore}. */
 interface WorkBuddyCatalogStoreOptions {
-  /** Explicit state-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit state-file path, overriding the plugin's state-directory default. */
   path?: string;
 }
 /**
@@ -2563,13 +2563,13 @@ declare class WorkBuddyCatalogStore {
  *
  * @module dsh-workbuddy-connect/visibility-store
  */
-/** Basename of the CN variant's visibility file inside the Harness home. */
+/** Basename of the CN variant's visibility file inside the plugin's config directory. */
 declare const WORKBUDDY_VISIBILITY_FILENAME = ".workbuddy-model-visibility.json";
-/** Plugin-owned visibility-file path inside the Harness home. */
+/** Plugin-owned visibility-file path inside the plugin's config directory. */
 declare function workbuddyVisibilityPath(filename?: string): string;
 /** Options for {@link WorkBuddyVisibilityStore}. */
 interface WorkBuddyVisibilityStoreOptions {
-  /** Explicit state-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit state-file path, overriding the plugin's config-directory default. */
   path?: string;
 }
 /**
@@ -2712,9 +2712,10 @@ declare class WorkBuddyProbeService {
 //#endregion
 //#region src/host-heartbeat.d.ts
 /**
- * Host-side heartbeat: a small JSON file written under `$DSH_HOME` once the
- * `workbuddy` provider is registered. The status CLI reads it to report
- * whether the host bundle is alive, independent of the browser card.
+ * Host-side heartbeat: a small JSON file written into the plugin's own state
+ * directory once the `workbuddy` provider is registered. The status CLI reads
+ * it to report whether the host bundle is alive, independent of the browser
+ * card.
  *
  * The browser (client) bundle cannot write files; its health is reported
  * only through `console.error` on failure (see `src/client/index.tsx`).
@@ -2723,7 +2724,7 @@ declare class WorkBuddyProbeService {
  *
  * @module dsh-workbuddy-connect/host-heartbeat
  */
-/** Basename of the host heartbeat file inside the Harness home. */
+/** Basename of the host heartbeat file inside the plugin's state directory. */
 declare const WORKBUDDY_HOST_HEARTBEAT_FILENAME = ".workbuddy-host-heartbeat.json";
 /** Current on-disk heartbeat format; readers reject others. */
 declare const HEARTBEAT_FORMAT_VERSION = 1;

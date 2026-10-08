@@ -150,6 +150,31 @@ dsh plugin --profile <profile> exec dsh-workbuddy-connect doctor
 
 默认国内版；加 `--provider workbuddy-ai` 走国际版。`accounts` 只读。`logout` 只删插件自留副本，不动桌面 App 的登录。
 
+## 数据放在哪
+
+按 profile 隔离，全部放在 `$DSH_HOME/profiles/<profile>/.dsh-workbuddy-connect-functy/` 下（默认即 `~/.dsh/profiles/web/.dsh-workbuddy-connect-functy/`），分两层：
+
+```text
+.dsh-workbuddy-connect-functy/
+├── config/                            # 你的选择，删了就没了
+│   ├── .workbuddy-auth.json           # 国内版凭据（插件自留副本）
+│   ├── .workbuddy-ai-auth.json        # 国际版凭据
+│   ├── .workbuddy-accounts.json       # 国内版账号池
+│   ├── .workbuddy-ai-accounts.json    # 国际版账号池
+│   ├── .workbuddy-context.json        # 各模型选定的上下文长度
+│   └── .workbuddy-model-visibility.json
+└── state/                             # 可重建，删了会自己长回来
+    ├── .workbuddy-catalog.json        # 本账号上次成功的模型目录
+    ├── .workbuddy-probe.json          # 推理档位检测结果
+    ├── .workbuddy-usage.json          # 请求用量计数
+    ├── .workbuddy-app-version.json
+    └── .workbuddy-host-heartbeat.json # `status` 用它判断宿主是否在跑
+```
+
+**profile 目录怎么确定的**：DSH 没有把当前 profile 名暴露给插件，所以插件在 `$DSH_HOME/profiles/` 下找**声明了本插件的 profile**（读各 profile 的 `package.json`）；若有多个都声明了，再用「该 profile 里装的这份插件是否指向当前这份代码」来消歧。这样 web / desktop 各自独立、互不干扰。确定不了时（例如直接从源码 checkout 运行）回落到 `$DSH_HOME/.dsh-workbuddy-connect-functy/`；环境变量 `DSH_WORKBUDDY_DATA_DIR` 可显式覆盖整个目录。
+
+> **从 0.13.x 升级注意**：旧版本的这些文件直接放在 `$DSH_HOME` 根目录下（`.workbuddy-*.json`）。本次改动**不做自动迁移**，升级后账号池与缓存视为全新：需要重新添加账号。旧的散落文件可以自行删除。
+
 ## 已知限制
 
 - 在 macOS 的 Web / Desktop 下验证过（DSH `0.1.7-alpha.1` / `0.2.0-rc.1` / `0.2.0-rc.2`，Node 22+）。Windows 依次探 Local 与 Roaming AppData；WSL 优先读挂载的 Windows 用户目录。用户名不一致时用 `WORKBUDDY_AUTH_FILE` / `WORKBUDDY_AI_AUTH_FILE`。

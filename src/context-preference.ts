@@ -18,7 +18,7 @@
  */
 
 import { resolve } from 'node:path'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { workbuddyConfigDir } from './paths.ts'
 import { readStoreDocument, writeStoreDocument } from './store-file.ts'
 import { isJsonObject } from './json-value.ts'
 import type { WorkBuddyVariant } from './variants.ts'
@@ -26,12 +26,12 @@ import type { WorkBuddyVariant } from './variants.ts'
 /** On-disk format this reader accepts; other versions are discarded. */
 const FORMAT_VERSION = 1
 
-/** Basename of the CN variant's preference file inside the Harness home. */
+/** Basename of the CN variant's preference file inside the plugin's config directory. */
 export const WORKBUDDY_CONTEXT_FILENAME = '.workbuddy-context.json'
 
 /** Where one variant's preferences live. */
 export function workbuddyContextPath(filename: string): string {
-  return resolve(resolveDshHome(), filename)
+  return resolve(workbuddyConfigDir(), filename)
 }
 
 /** One model's stored choice: the length the user picked. */

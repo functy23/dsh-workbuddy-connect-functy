@@ -8,7 +8,7 @@
  * one build of a model says nothing about the next — so every record carries a
  * fingerprint of the fields the probe depended on.
  *
- * The file lives beside the plugin's own credential copy under `$DSH_HOME`,
+ * The file lives in the plugin's own state directory,
  * never in the desktop app's files, and carries no token, prompt, or response
  * body — only model ids, effort spellings, and timestamps.
  *
@@ -17,13 +17,13 @@
 
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { workbuddyStateDir } from './paths.ts'
 import { readStoreDocument, writeStoreDocument } from './store-file.ts'
 import { isJsonObject } from './json-value.ts'
 import type { WorkBuddyModelInfo } from './catalog.ts'
 import type { WorkBuddyEffort } from './upstream.ts'
 
-/** Basename of the probe record inside the Harness home. */
+/** Basename of the probe record inside the plugin's state directory. */
 export const WORKBUDDY_PROBE_FILENAME = '.workbuddy-probe.json'
 
 /**
@@ -89,7 +89,7 @@ interface ProbeDocument {
 }
 
 /**
- * Plugin-owned probe record path inside the Harness home.
+ * Plugin-owned probe record path inside the plugin's state directory.
  *
  * One file per variant. Same-named models exist on both endpoints (the
  * international catalog repeats `glm-5.3`, `glm-5.2`, `hy3`, `kimi-k2.6`), and
@@ -98,7 +98,7 @@ interface ProbeDocument {
  * observation answer for the other. The paths differ; the format does not.
  */
 export function workbuddyProbePath(filename: string = WORKBUDDY_PROBE_FILENAME): string {
-  return join(resolveDshHome(), filename)
+  return join(workbuddyStateDir(), filename)
 }
 
 /**
@@ -153,7 +153,7 @@ function isRecord(value: unknown): value is WorkBuddyProbeRecord {
 
 /** Options for {@link WorkBuddyProbeStore}. */
 export interface WorkBuddyProbeStoreOptions {
-  /** Explicit state-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit state-file path, overriding the plugin's state-directory default. */
   path?: string
   /** Observation lifetime; defaults to 14 days. */
   ttlMs?: number

@@ -150,6 +150,31 @@ dsh plugin --profile <profile> exec dsh-workbuddy-connect doctor
 
 CN by default; add `--provider workbuddy-ai` for the international product. `accounts` is read-only. `logout` removes only the plugin-owned copy.
 
+## Where the data lives
+
+Scoped per profile, all under `$DSH_HOME/profiles/<profile>/.dsh-workbuddy-connect-functy/` (by default `~/.dsh/profiles/web/.dsh-workbuddy-connect-functy/`), in two layers:
+
+```text
+.dsh-workbuddy-connect-functy/
+├── config/                            # your decisions — deleting these loses state
+│   ├── .workbuddy-auth.json           # CN credential (the plugin's own copy)
+│   ├── .workbuddy-ai-auth.json        # international credential
+│   ├── .workbuddy-accounts.json       # CN account pool
+│   ├── .workbuddy-ai-accounts.json    # international account pool
+│   ├── .workbuddy-context.json        # chosen context length per model
+│   └── .workbuddy-model-visibility.json
+└── state/                             # rebuildable — safe to delete
+    ├── .workbuddy-catalog.json        # this account's last good model list
+    ├── .workbuddy-probe.json          # reasoning-level probe results
+    ├── .workbuddy-usage.json          # request tallies
+    ├── .workbuddy-app-version.json
+    └── .workbuddy-host-heartbeat.json # what `status` reads to see if the host is up
+```
+
+**How the profile is determined**: DSH does not expose the active profile name to a plugin, so the plugin looks under `$DSH_HOME/profiles/` for the profile that **declares it** (reading each profile's `package.json`); when more than one does, it disambiguates by whether that profile's installed copy resolves to this same code. `web` and `desktop` therefore stay independent. When none can be determined (running from a source checkout, say) it falls back to `$DSH_HOME/.dsh-workbuddy-connect-functy/`; the `DSH_WORKBUDDY_DATA_DIR` environment variable overrides the whole directory.
+
+> **Upgrading from 0.13.x**: the old versions kept these files loose in the root of `$DSH_HOME` (`.workbuddy-*.json`). This change does **not** migrate them, so after upgrading the account pool and caches start empty: accounts must be added again. The old loose files can be deleted.
+
 ## Known limitations
 
 - Verified on macOS Web / Desktop (DSH `0.1.7-alpha.1` / `0.2.0-rc.1` / `0.2.0-rc.2`, Node 22+). Windows probes Local then Roaming AppData; WSL reads the mounted Windows profile first. If user names differ, set `WORKBUDDY_AUTH_FILE` / `WORKBUDDY_AI_AUTH_FILE`.

@@ -29,7 +29,7 @@
  */
 
 import { resolve } from 'node:path'
-import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
+import { workbuddyConfigDir } from './paths.ts'
 import { readStoreDocument, writeStoreDocument } from './store-file.ts'
 import type { WorkBuddyCredential } from './auth.ts'
 import type { WorkBuddyVariant } from './variants.ts'
@@ -37,7 +37,7 @@ import type { WorkBuddyVariant } from './variants.ts'
 /** On-disk format this reader accepts; other versions are discarded. */
 const POOL_FORMAT_VERSION = 1
 
-/** Basename of the CN variant's account-pool file inside the Harness home. */
+/** Basename of the CN variant's account-pool file in the plugin's config directory. */
 export const WORKBUDDY_ACCOUNTS_FILENAME = '.workbuddy-accounts.json'
 
 /** Why an account was benched. */
@@ -247,7 +247,7 @@ export function credentialOf(account: WorkBuddyAccount): WorkBuddyCredential {
 /** Options for {@link WorkBuddyAccountPool}. */
 export interface WorkBuddyAccountPoolOptions {
   variant: WorkBuddyVariant
-  /** Explicit pool-file path, overriding the `$DSH_HOME` default. */
+  /** Explicit pool-file path, overriding the plugin's config-directory default. */
   path?: string
 }
 
@@ -268,9 +268,9 @@ interface PoolDocument {
   dismissed?: string[]
 }
 
-/** Pool-file path for one variant inside the Harness home. */
+/** Pool-file path for one variant inside the plugin's config directory. */
 export function workbuddyAccountsPath(filename: string = WORKBUDDY_ACCOUNTS_FILENAME): string {
-  return resolve(resolveDshHome(), filename)
+  return resolve(workbuddyConfigDir(), filename)
 }
 
 function optionalString(value: unknown): string | undefined {
