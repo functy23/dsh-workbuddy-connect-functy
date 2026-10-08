@@ -1089,7 +1089,11 @@ describe('WorkBuddy settings page', () => {
       await Promise.resolve()
       await Promise.resolve()
     })
-    expect(text()).toContain('no WorkBuddy credential')
+    // The refusal reaches the page as readable copy rather than the host's own
+    // wire sentence — the page restates the host's reasons in the interface's
+    // language (see `client/host-reason.ts`). What this pins is that a refusal
+    // is surfaced at all, which is the part that used to fail silently.
+    expect(text()).toContain(t('hostNoCredential'))
   })
 
   it('shows a recorded detection beside the model it belongs to', async () => {

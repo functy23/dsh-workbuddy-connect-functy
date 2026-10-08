@@ -79,6 +79,7 @@ import {
 } from './ui-rows.tsx'
 import type { WorkBuddyCardVariant } from './card-variants.ts'
 import type { WorkBuddySettingsKey } from './locales.ts'
+import { translateHostReason } from './host-reason.ts'
 
 /** Copy function injected by the client registration. */
 type Translate = (key: WorkBuddySettingsKey, params?: Record<string, unknown>) => string
@@ -772,7 +773,7 @@ function ModelsBlock({ variant, status, probe, busy, t, staged, context, onConte
         />
       )}
       {signedIn === undefined && status?.status === 'error' ? (
-        <p className="wbp-rowError" role="status">{status.message}</p>
+        <p className="wbp-rowError" role="status">{translateHostReason(t, status.message)}</p>
       ) : null}
       {models.length === 0
         ? <SettingRow title={<span className="wbp-hint">{t('modelsEmpty')}</span>} className="wbp-rowFlush" />
@@ -958,7 +959,7 @@ function AccountsSection({ entries, statuses, busy, now, t, onAdd, onAction, onR
         if (status === undefined || status.status !== 'error') return null
         return (
           <p key={variant.id} className="wbp-rowError" role="status">
-            {variant.appName}: {status.message}
+            {variant.appName}: {translateHostReason(t, status.message)}
           </p>
         )
       })}
@@ -972,7 +973,7 @@ function AccountsSection({ entries, statuses, busy, now, t, onAdd, onAction, onR
         if (status === undefined || status.status !== 'signed-in' || status.desktopError === undefined) return null
         return (
           <p key={variant.id} className="wbp-notice" role="status">
-            {variant.appName}: {status.desktopError}
+            {variant.appName}: {translateHostReason(t, status.desktopError)}
           </p>
         )
       })}
@@ -2167,6 +2168,22 @@ export function WorkBuddySettingsPage({ t, context, refreshPanel }: WorkBuddySet
   const currentProbeControlVisible: boolean | undefined =
     statedPreference(statuses, status => status.probeControlVisible)
 
+  /**
+   * The error banner's sentence, restated in the interface's language.
+   *
+   * Derived here rather than translated at each `setError` call: the host's
+   * refusals arrive down a dozen separate paths (the account route, the probe
+   * route, the status document's own `reason`), and threading a translator
+   * through every one of them is both more code and one missed path away from
+   * an English sentence on a Chinese page. Translating the single string the
+   * banner is about to draw covers all of them at once.
+   *
+   * A sentence this build does not recognise comes back unchanged, which is
+   * what keeps a raw `error.message` (a filesystem or fetch failure) readable
+   * rather than replaced by a generic "request failed".
+   */
+  const shownError = error === undefined ? undefined : translateHostReason(t, error)
+
   return (
     // The reference layout: a 720px column of groups of hairline-separated rows.
     // No card surfaces — the page has to read as one of the harness's own
@@ -2207,8 +2224,8 @@ export function WorkBuddySettingsPage({ t, context, refreshPanel }: WorkBuddySet
           />
         ))}
       </>
-      {error === undefined ? null : (
-        <p className="wbp-rowError">{error}</p>
+      {shownError === undefined ? null : (
+        <p className="wbp-rowError">{shownError}</p>
       )}
       {notice === undefined ? null : (
         <p className="wbp-notice" role="status">{notice}</p>
@@ -2361,8 +2378,8 @@ export function WorkBuddySettingsPage({ t, context, refreshPanel }: WorkBuddySet
             * found by anything scanning the page's text.
             */}
           <p className="wbp-saveBarText" role="status" aria-live="polite">
-            {error !== undefined
-              ? error
+            {shownError !== undefined
+              ? shownError
               : hasStaged
                 ? t('saveBarUnsaved')
                 : justSaved ? t('saveBarSaved') : ''}
@@ -2399,7 +2416,7 @@ export function WorkBuddySettingsPage({ t, context, refreshPanel }: WorkBuddySet
           variant={adding}
           t={t}
           busy={busy}
-          {...error === undefined ? {} : { error }}
+          {...shownError === undefined ? {} : { error: shownError }}
           onCancel={() => { setAdding(undefined); setError(undefined) }}
           onSubmitQr={() => submitQr(adding)}
           onPollQr={state => pollQr(adding, state)}

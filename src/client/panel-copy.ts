@@ -11,6 +11,8 @@
  * @module dsh-workbuddy-connect/client/panel-copy
  */
 
+import { HOST_REASON_EN, HOST_REASON_ZH } from './host-reason-copy.ts'
+
 /** Locale namespace the panel's surfaces register under. */
 export const PANEL_LOCALE_NS = 'panel.workbuddy'
 
@@ -95,6 +97,9 @@ export const PANEL_COPY_EN = {
   footerLabel: 'WorkBuddy — open the dashboard',
   /** The rail icon's accessible name. */
   railLabel: 'WorkBuddy dashboard',
+  // The host's own refusal sentences, which a product's detail line draws
+  // verbatim. Shared with the settings namespace through this one table.
+  ...HOST_REASON_EN,
 } as const
 
 /** Key domain of the panel's dictionary. */
@@ -134,6 +139,7 @@ export const PANEL_COPY_ZH: Record<PanelKey, string> = {
   accountCreditsPending: '尚未读取',
   footerLabel: 'WorkBuddy —— 打开仪表盘',
   railLabel: 'WorkBuddy 仪表盘',
+  ...HOST_REASON_ZH,
 }
 
 /** Translate one panel key with optional {name} parameters. */

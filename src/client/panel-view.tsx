@@ -26,6 +26,7 @@ import { Badge, Ring, StatTile as UiStatTile, cx } from './ui-rows.tsx'
 import { ActionButton } from './ui-button.tsx'
 import type { WorkBuddyPanelStore } from './panel-store.ts'
 import { panelTranslator } from './panel-copy.ts'
+import { translateHostReason } from './host-reason.ts'
 import type { PanelKey, PanelLocaleSeat, PanelTranslator } from './panel-copy.ts'
 import { buildPanelView } from './panel.ts'
 import type { PanelProductView, PanelView } from './panel.ts'
@@ -170,7 +171,9 @@ function ProductCard({ product, t }: { product: PanelProductView; t: PanelTransl
           </Badge>
         )}
       </div>
-      {product.detail === undefined ? null : <p className="wbp-noticeHint">{product.detail}</p>}
+      {product.detail === undefined
+        ? null
+        : <p className="wbp-noticeHint">{translateHostReason(t, product.detail)}</p>}
       <div className="wbp-tiles">
         {product.stats.map(stat => (
           <UiStatTile

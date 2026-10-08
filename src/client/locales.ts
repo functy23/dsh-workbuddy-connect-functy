@@ -1,5 +1,7 @@
 /** Plugin-card copy registered under the settings.workbuddy locale namespace. */
 
+import { HOST_REASON_EN, HOST_REASON_ZH } from './host-reason-copy.ts'
+
 /**
  * The translation function every browser-side component receives.
  *
@@ -248,6 +250,10 @@ export const en = {
   saveBarSaving: 'Saving…',
   saveBarDiscard: 'Discard',
   saveBarSaved: 'Saved',
+  // The host's own refusal sentences, shared with the dashboard's namespace:
+  // both surfaces draw them, so the copy lives in one table (see
+  // `host-reason-copy.ts`) and each dictionary spreads it in.
+  ...HOST_REASON_EN,
 } as const
 
 export type WorkBuddySettingsKey = keyof typeof en
@@ -472,4 +478,7 @@ export const zh: Record<WorkBuddySettingsKey, string> = {
   saveBarSaving: '保存中…',
   saveBarDiscard: '放弃',
   saveBarSaved: '已保存',
+  // 宿主自己的拒绝语。与仪表盘共用一份表：两边都要显示这些句子，所以文案
+  // 只有一处（见 `host-reason-copy.ts`），各自展开进来。
+  ...HOST_REASON_ZH,
 }
