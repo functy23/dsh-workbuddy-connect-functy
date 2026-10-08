@@ -64,7 +64,7 @@ Choose which models appear in the picker:
 ## Features
 
 - **Zero configuration**: after install, pick a WorkBuddy model in chat. The plugin reuses the desktop app's sign-in and follows account switches.
-- **Dashboard**: a credit card at the sidebar foot opens the centre-column panel; Settings → **DSH-WorkBuddy** manages accounts, models, context length and reasoning-level detection. The card itself can be switched off.
+- **Dashboard**: a credit card at the sidebar foot opens the centre-column panel; Settings → **WorkBuddy** manages accounts, models, context length and reasoning-level detection. The card itself can be switched off.
 - **Multi-account rotation**: several accounts per product. Requests rotate across available ones; a rate-limited account is benched and retried later. Add via QR, a pasted token, or the desktop app's own sign-in.
 - **Credit**: sidebar can show remaining credit or used/total; CN enterprise accounts use the enterprise billing endpoint.
 - **Images**: most models accept paste or drag-and-drop.
@@ -134,7 +134,7 @@ Where things live:
 Settings → Models                            ← no WorkBuddy rows (intentional)
 Settings → Built-in Plugins → workbuddy-connect  ← read-only runtime status
 sidebar foot                                 ← credit card → centre dashboard
-Settings → DSH-WorkBuddy                     ← accounts, models, sidebar
+Settings → WorkBuddy                         ← accounts, models, sidebar
 chat model picker                            ← WorkBuddy / WorkBuddy AI groups
 ```
 

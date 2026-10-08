@@ -124,7 +124,7 @@ describe('settings.section carries the WorkBuddy page', () => {
         name: 'settings.section',
         id: 'dsh-workbuddy',
         order: 40,
-        label: () => 'DSH-WorkBuddy',
+        label: () => 'WorkBuddy',
       })
     }).not.toThrow()
     expect(entries(core, 'settings.section')).toHaveLength(1)
