@@ -1,3 +1,14 @@
+> [!IMPORTANT]
+> **本仓库已归档（archived），不再维护。**
+>
+> 上游风控还在持续加强：除了已有的渠道校验，UA 与请求头格式也在反复变动（`X-Conversation-*`、`acp-connection-id`、`X-No-*` 的取值与组合一再调整，每次变动都得重新对齐）。继续跟着官方客户端做字节级模仿已经越来越难，失效速度超过了可维护的节奏。
+>
+> **后续开发已移步至 [functy23/dsh-workbuddy-panel](https://github.com/functy23/dsh-workbuddy-panel)** —— 把 workbuddy2api 网关托管进 DSH：进程托管、模型自动发现、账号与登录管理全部收在插件内。
+>
+> 本仓库的代码、文档与 Release 仅作历史存档保留：不再接受 Issue / PR，不再发新版，也不保证仍然可用。
+
+---
+
 <div align="center">
 
 <img src="icon.svg" width="150" alt="dsh-workbuddy-connect-functy"/>
@@ -32,7 +43,7 @@
 > - 校验维度在持续增加：已确认的有**系统提示词开头的固定句**（DSH 核心注入的 `You are an AI agent powered by DeepSeek Harness.`），以及**请求头格式**（`X-Conversation-*` 系列、`acp-connection-id`、`X-No-*` 的用法）。历史版本已经因为漏掉 `X-Conversation-*` 三件套、发错 `X-No-*` 而各被拦过一次。
 > - **本插件是跟着官方客户端做字节级模仿**，属于猫鼠游戏：上游改一次，插件就可能失效一次，直到有人再适配。**没有任何版本能保证长期可用。**
 > - **账号风险真实存在**：本轮排查中，一个 CN 账号的 refresh token 被上游吊销（`invalid_grant: User disabled`），另一个被判定「账号存在异常行为，已被限制使用」（`403 / 11140`）。频繁重试、批量轮换、异常调用节奏都可能加速这一判定。
-> - 上游 [corrinehu/dsh-workbuddy-connect](https://github.com/corrinehu/dsh-workbuddy-connect) 已于 2026-10-20 **停止维护**，明确表示「尊重这一边界，不再继续适配」此类校验，仓库计划 2026-10-22 下线。本仓库是独立分支，仍在维护，但不代表这条路能一直走下去。
+> - 上游 [corrinehu/dsh-workbuddy-connect](https://github.com/corrinehu/dsh-workbuddy-connect) 已于 2026-10-20 **停止维护**，明确表示「尊重这一边界，不再继续适配」此类校验，仓库计划 2026-10-22 下线。本仓库曾是这个方向的独立分支，**现已归档停止维护**（见顶部说明），这条路到这里为止。
 >
 > **请自行评估是否值得用你的账号承担这个风险。** 介意的话，直接用官方 WorkBuddy 客户端。
 

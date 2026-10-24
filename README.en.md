@@ -1,3 +1,14 @@
+> [!IMPORTANT]
+> **This repository is archived and no longer maintained.**
+>
+> The upstream risk controls keep tightening: beyond the existing channel verification, the UA and request-header shape keeps changing too (`X-Conversation-*`, `acp-connection-id` and `X-No-*` values and combinations have been re-tuned repeatedly, and every shift needs another round of realignment). Byte-level imitation of the official client has become progressively harder to sustain, and the breakage rate now outpaces the maintenance pace.
+>
+> **Development has moved to [functy23/dsh-workbuddy-panel](https://github.com/functy23/dsh-workbuddy-panel)** — it hosts the workbuddy2api gateway inside DSH: process supervision, automatic model discovery, and account/login management all live in the plugin.
+>
+> The code, docs and releases here are kept for historical record only: no Issue / PR triage, no new versions, and no guarantee it still works.
+
+---
+
 <div align="center">
 
 <img src="icon.svg" width="150" alt="dsh-workbuddy-connect-functy"/>
@@ -32,7 +43,7 @@
 > - The checks keep growing. Confirmed so far: the **fixed sentence at the start of the system prompt** (DSH core injects `You are an AI agent powered by DeepSeek Harness.`), and the **request-header shape** (`X-Conversation-*`, `acp-connection-id`, how `X-No-*` is used). Earlier releases of this plugin were already refused once for omitting the `X-Conversation-*` trio and once for sending `X-No-*` where the official client never does.
 > - **This plugin imitates the official client at the byte level**, which is a cat-and-mouse game: every upstream change can break it until someone adapts again. **No version can promise it keeps working.**
 > - **The account risk is real.** While diagnosing this, one CN account's refresh token was revoked by the upstream (`invalid_grant: User disabled`) and another was flagged 「账号存在异常行为，已被限制使用」 (`403 / 11140`). Retrying aggressively, rotating many accounts, or unusual request pacing all make that judgement more likely.
-> - Upstream [corrinehu/dsh-workbuddy-connect](https://github.com/corrinehu/dsh-workbuddy-connect) **stopped maintenance on 2026-10-20**, saying it respects that boundary and will not keep adapting to these checks; the repository is scheduled to go offline on 2026-10-22. This fork is independent and still maintained, but that does not mean the road continues.
+> - Upstream [corrinehu/dsh-workbuddy-connect](https://github.com/corrinehu/dsh-workbuddy-connect) **stopped maintenance on 2026-10-20**, saying it respects that boundary and will not keep adapting to these checks; the repository is scheduled to go offline on 2026-10-22. This fork once carried that direction independently, but it is **now archived** (see the top of this file) — the road ends here.
 >
 > **Decide for yourself whether your account is worth that risk.** If not, use the official WorkBuddy client.
 
